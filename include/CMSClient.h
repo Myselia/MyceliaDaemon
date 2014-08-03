@@ -8,6 +8,7 @@
 #include <sys/socket.h>	//socket functions
 #include <netdb.h>		//socket functions
 #include <stdio.h>
+#include <pthread.h>
 
 struct systemStats {
     std::string systemTemp;
@@ -25,14 +26,16 @@ class CMSClient
 {
     public:
         //Constructors
+        CMSClient();
         CMSClient(const char*  serverPort, const char* serverIP);
         virtual ~CMSClient();
 
         //Functions
-        std::string createTestXMLPayload(systemStats *ss);
+        int findServer();
         int connectToServer();
         int sendSystemInfo(systemStats *ss);
         void updateSystemStats(systemStats *ss);
+        std::string createTestXMLPayload(systemStats *ss);
 
         //Strucs
         systemStats ss;
@@ -43,6 +46,7 @@ class CMSClient
         int socketfd;
     protected:
     private:
+        void setupServerInfo(const char* serverIP, const char* serverPort);
         std::string execAndStore(char* cmd);
 };
 
