@@ -3,11 +3,13 @@
 
 CMSClient::CMSClient()
 {
+    conn.ready = false;
     memset(&conn.host_info, 0, sizeof conn.host_info);
 }
 
 CMSClient::CMSClient(const char* serverIP, const char* serverPort)
 {
+    conn.ready = false;
     conn.serverIP = serverIP;
     conn.serverPort = serverPort;
     memset(&conn.host_info, 0, sizeof conn.host_info);
@@ -99,7 +101,7 @@ int CMSClient::findServer()
         sleep(1);
     }
 
- close(socketfd);
+    close(socketfd);
     return 0;
 
 }
@@ -112,9 +114,8 @@ int CMSClient::connectToServer()
     conn.host_info.ai_family = AF_INET;
     conn.host_info.ai_socktype = SOCK_STREAM;
     conn.host_info.ai_protocol = IPPROTO_TCP;
-    std::cout << "addr ai " << conn.serverIP << " " << conn.serverPort << std::endl;
-    //conn.status = getaddrinfo(conn.serverIP, conn.serverPort, &conn.host_info, &conn.host_info_list); //"IP", "port", leave it alone, leave it alone
-    conn.status = getaddrinfo("132.205.84.236", "6969", &conn.host_info, &conn.host_info_list); //"IP", "port", leave it alone, leave it alone
+    std::cout << "SERVER INFO IS: " << conn.serverIP << " " << conn.serverPort << std::endl;
+    conn.status = getaddrinfo(conn.serverIP, conn.serverPort, &conn.host_info, &conn.host_info_list); //"IP", "port", leave it alone, leave it alone
     if(conn.status !=0)
     {
         std::cout << "..STATUS CODE: " << conn.status << std::endl;
@@ -128,20 +129,20 @@ int CMSClient::connectToServer()
     // Socket Creation Protocol
     std::cout << "Creating a socket..." << std::endl;
     std::cout << "Setting up the socket..." << std::endl;
-    socketfd = socket(conn.host_info_list->ai_family, conn.host_info_list->ai_socktype,
-                      conn.host_info_list->ai_protocol);
-    if(socketfd == -1)
+    conn.socketfd = socket(conn.host_info_list->ai_family, conn.host_info_list->ai_socktype,
+                           conn.host_info_list->ai_protocol);
+    if(conn.socketfd  == -1)
     {
         std::cout << "..Socket Error"<< std::endl;
     }
     else
     {
-        std::cout << "..Socket setup returned: " << socketfd << "[OK]" << std::endl;
+        std::cout << "..Socket setup returned: " << conn.socketfd << "[OK]" << std::endl;
     }
 
     // Socket Connection Protocol
     std::cout << "Connecting to server" << std::endl;
-    conn.status = connect(socketfd, conn.host_info_list->ai_addr, conn.host_info_list->ai_addrlen);
+    conn.status = connect(conn.socketfd, conn.host_info_list->ai_addr, conn.host_info_list->ai_addrlen);
     if(conn.status == -1)
     {
         std::cout << "..Connection Error"<< std::endl;
@@ -175,15 +176,16 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     // payload.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
     payload.append("<transmission>");
 
-    payload.append("<header id=\"1\" type=\"sys\" to=\"cms\" from=\"node1\">");
-    payload.append("OPCODE");
+    payload.append("<header id=\"0\" type=\"sys\" to=\"cms\" from=\"");
+    std::string tmp;
+    sprintf((char*)tmp.c_str(), "%d", conn.coreID);
+    std::string str = tmp.c_str();
+    payload.append(str);
+    payload.append("\">");
+    payload.append("110");
     payload.append("</header>");
 
-    payload.append("<particle type=\"sys\" class=\"temperature\" count=\"1\">");
-    payload.append(ss->systemTemp);
-    payload.append("</particle>");
-
-    payload.append("<particle type=\"sys\" class=\"temperature\" count=\"1\">");
+    payload.append("<particle type=\"sys\" class=\"temp\" count=\"1\">");
     payload.append(ss->systemTemp);
     payload.append("</particle>");
 
@@ -216,10 +218,8 @@ int CMSClient::sendSystemInfo(systemStats *ss)
     std::cout << "Sending XML payload...";
     ssize_t bytes_sent;
     std::string payload = createTestXMLPayload(ss);
-    std::string *payloadP = &payload;
-    std::cout << "MEGA TEST2: " << payload << std::endl;
-    //const char* payloadConverted = payload.c_str();
-    bytes_sent = send(socketfd, payload.c_str(), strlen(payload.c_str()), 0);
+    std::cout << payload << std::endl;
+    bytes_sent = send(conn.socketfd, payload.c_str(), strlen(payload.c_str()), 0);
     std::cout << " Sent: " << bytes_sent << std::endl;
 
     return 0;

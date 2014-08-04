@@ -17,7 +17,10 @@ struct systemStats {
 struct connInfo {
     const char* serverPort;
     const char* serverIP;
+    int socketfd;
+    int coreID;
     int status;
+    bool ready;
     struct addrinfo host_info;
 	struct addrinfo *host_info_list;
 };
@@ -41,9 +44,6 @@ class CMSClient
         systemStats ss;
         //systemStats *ss = &ss;
         connInfo conn;
-
-        //Vars
-        int socketfd;
     protected:
     private:
         void setupServerInfo(const char* serverIP, const char* serverPort);

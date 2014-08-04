@@ -21,13 +21,35 @@ int main()
     {
         if (client.connectToServer() == 0)
         {
+            //On when first connected, the client will wait for ID and role assignments from the CMS
             std::cout << "Client started with serverIP(" << serverIP << ")" << " on port(" << DEFAULT_PORT << ")" << std::endl;
+
+            char buffer[255];
+            memset(&buffer, 0, sizeof(buffer));
+            //ssize_t bytes_received;
+
+            while (!client.conn.ready)
+            {
+              //  bytes_received = recv(client.conn.socketfd, buffer, 1000, 0);
+                unsigned slen = sizeof(sockaddr);
+                if (recvfrom(client.conn.socketfd, buffer, sizeof(buffer), 0, (sockaddr *)&client.conn.host_info, &slen)==-1)
+                {
+                    perror("receive");
+                }
+                else
+                {
+                    printf("recv: %s\n", buffer);
+                    std::string hold(buffer);
+                    client.conn.coreID = atoi(hold.c_str());
+                    std::cout << "ID of this node is: " << client.conn.coreID << std::endl;
+                    client.conn.ready = true;
+                }
+            }
 
             for (int i = 0; i < 1000; i ++)
             {
                 client.updateSystemStats(&client.ss);
                 client.sendSystemInfo(&client.ss);
-                std::cout << "DOING SHIT" << std::endl;
                 sleep(1);
             }
         }
