@@ -185,9 +185,22 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     payload.append("110");
     payload.append("</header>");
 
+    //Temp
     payload.append("<particle type=\"sys\" class=\"temp\" count=\"1\">");
     payload.append(ss->systemTemp);
     payload.append("</particle>");
+
+
+    //Meminfo
+    payload.append("<particle type=\"sys\" class=\"ram\" count=\"1\">");
+    payload.append(ss->systemRamRemaining);
+    payload.append("</particle>");
+
+    //CPU Info
+    payload.append("<particle type=\"sys\" class=\"cpu\" count=\"1\">");
+    payload.append(ss->systemCpuUsage);
+    payload.append("</particle>");
+
 
     payload.append("</transmission>\r\n");
 
@@ -202,20 +215,32 @@ void CMSClient::updateSystemStats(systemStats *ss)
     //###Formatted command to comply with conversion to other data types.
     std::string commandFormatted;
 
-    //Update this particular nodes temperature (in C because we arent F[uckheads])
+    //TEMPERATURE
     commandRecv = execAndStore("/opt/vc/bin/vcgencmd measure_temp");
     commandFormatted = commandRecv.substr(5,4);
     ss->systemTemp = commandFormatted;
-    //std::cout << "CF: " << commandFormatted << std::endl;
-    //ss->systemTemp = ::atof(commandFormatted.c_str());
     std::cout << "SS TEMP VAL: " << ss->systemTemp << std::endl;
+
+    //RAM
+    commandRecv = execAndStore("cat /proc/meminfo | grep -i memfree | sed 's/:[ \t]*/: /'");
+    commandFormatted = commandRecv.substr(9,6);
+    ss->systemRamRemaining = commandFormatted;
+    std::cout << "SS RAM VAL: " << commandFormatted << std::endl;
+
+    //CPU INFO
+    commandRecv = execAndStore("top -bn1 | grep '^%Cpu' | awk '{print $2+$4+$6}'");
+    commandFormatted = commandRecv.substr(0, commandRecv.length() - 1);
+    ss->systemCpuUsage = commandFormatted;
+    std::cout << "SS CPU USAGE VAL: " << commandFormatted << std::endl;
+
+    //PARTICLE TOTAL
 }
 
 int CMSClient::sendSystemInfo(systemStats *ss)
 {
 
     // Data Sending Protocol
-    std::cout << "Sending XML payload...";
+    std::cout << "Sending XML payload: ";
     ssize_t bytes_sent;
     std::string payload = createTestXMLPayload(ss);
     std::cout << payload << std::endl;

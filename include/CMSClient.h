@@ -12,6 +12,8 @@
 
 struct systemStats {
     std::string systemTemp;
+    std::string systemRamRemaining;
+    std::string systemCpuUsage;
 };
 
 struct connInfo {
