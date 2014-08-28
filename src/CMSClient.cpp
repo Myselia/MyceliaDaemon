@@ -176,30 +176,30 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     // payload.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
     payload.append("<transmission>");
 
-    payload.append("<header id=\"0\" type=\"sys\" to=\"cms\" from=\"");
+    payload.append("<header id=\"0\" from=\"node:");
     std::string tmp;
     sprintf((char*)tmp.c_str(), "%d", conn.coreID);
     std::string str = tmp.c_str();
     payload.append(str);
-    payload.append("\">");
+    payload.append("\" to=\"cms:server\" >");
     payload.append("110");
     payload.append("</header>");
 
     //Temp
-    payload.append("<particle type=\"sys\" class=\"temp\" count=\"1\">");
+    payload.append("<atom type=\"system\" class=\"temp\">");
     payload.append(ss->systemTemp);
-    payload.append("</particle>");
+    payload.append("</atom>");
 
 
     //Meminfo
-    payload.append("<particle type=\"sys\" class=\"ram\" count=\"1\">");
+    payload.append("<atom type=\"system\" class=\"ram\">");
     payload.append(ss->systemRamRemaining);
-    payload.append("</particle>");
+    payload.append("</atom>");
 
     //CPU Info
-    payload.append("<particle type=\"sys\" class=\"cpu\" count=\"1\">");
+    payload.append("<atom type=\"system\" class=\"cpu\">");
     payload.append(ss->systemCpuUsage);
-    payload.append("</particle>");
+    payload.append("</atom>");
 
 
     payload.append("</transmission>\r\n");
