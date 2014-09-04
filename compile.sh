@@ -1,2 +1,1 @@
-g++ main.cpp src/CMSClient.cpp -o CMSClient
-
+g++ main.cpp src/CMSClient.cpp src/XMLInterpreter.cpp -o CMSClient

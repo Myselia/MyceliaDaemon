@@ -181,7 +181,7 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     sprintf((char*)tmp.c_str(), "%d", conn.coreID);
     std::string str = tmp.c_str();
     payload.append(str);
-    payload.append("\" to=\"cms:server\" >");
+    payload.append("\" to=\"cms:server\">");
     payload.append("110");
     payload.append("</header>");
 
@@ -248,6 +248,11 @@ int CMSClient::sendSystemInfo(systemStats *ss)
     std::cout << " Sent: " << bytes_sent << std::endl;
 
     return 0;
+}
+
+void CMSClient::setNodeID(const int id)
+{
+    conn.coreID = id;
 }
 /*
 sockaddr_in si_client, si_server;

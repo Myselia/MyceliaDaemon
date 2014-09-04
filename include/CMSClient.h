@@ -40,6 +40,7 @@ class CMSClient
         int connectToServer();
         int sendSystemInfo(systemStats *ss);
         void updateSystemStats(systemStats *ss);
+        void setNodeID(const int id);
         std::string createTestXMLPayload(systemStats *ss);
 
         //Strucs
@@ -51,5 +52,4 @@ class CMSClient
         void setupServerInfo(const char* serverIP, const char* serverPort);
         std::string execAndStore(char* cmd);
 };
-
 #endif // CMSCLIENT_H
