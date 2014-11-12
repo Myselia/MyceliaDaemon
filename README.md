@@ -1,4 +1,4 @@
-CMSclient
+Mycelia Daemon
 =========
 
-A C++ client for the CMS application
+A Daemon for the nodes enabling grid-control.
