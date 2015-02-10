@@ -11,16 +11,23 @@ using namespace std;
 namespace Json
 {
 
-/**
- * Json serializer and deserializer.
- */
-class Json
+class JsonParseException: GenericException
 {
 	public:
-		Json();
+	JsonParseException()
+	{
+		//Do nothing
+	}
 
-	private:
+	JsonParseException(string message): GenericException(message)
+	{
+		//Do nothing
+	}
 
+	JsonParseException(exception cause): GenericException(cause)
+	{
+		//Do nothing
+	}
 };
 
 class JsonElement
@@ -105,6 +112,39 @@ class JsonObject: JsonElement
 
 	private:
 		unordered_map<string, JsonElement>  map;
+};
+
+/**
+ * Json serializer and deserializer.
+ */
+class Json
+{
+	public:
+		Json();
+
+		JsonElement parse(string jsonString);
+		string serialize(JsonElement element);
+
+	private:
+		JsonElement parse(string jsonString, int& position);
+		JsonObject parseObject(string jsonString, int& position);
+		JsonArray parseArray(string jsonString, int& position);
+		JsonPrimitive parsePrimitive(string jsonString, int& position);
+		JsonNull parseNull(string jsonString, int& position);
+		void skipSpaces(string jsonString, int& position);
+		char read(string jsonString, int position);
+		bool checkEqual(string jsonString, int position, string needle);
+
+		/**
+		 * Parse a C string without the delimiters.
+		 * This method keeps reading until it hits stopChar.
+		 */
+		string parseCString(string jsonString, int& position, char stopChar);
+
+		string serializeObject(JsonObject object);
+		string serializeArray(JsonArray array);
+		string serializePrimitive(JsonPrimitive primitive);
+		string serializeNull(JsonNull null);
 };
 
 }
