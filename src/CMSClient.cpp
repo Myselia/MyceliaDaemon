@@ -1,5 +1,6 @@
 #include "../include/CMSClient.h"
 #include <errno.h>
+#include <unistd.h>
 
 CMSClient::CMSClient()
 {
@@ -12,6 +13,10 @@ CMSClient::CMSClient(const char* serverIP, const char* serverPort)
     conn.ready = false;
     conn.serverIP = serverIP;
     conn.serverPort = serverPort;
+
+    iConn.ready = false;
+    iConn.serverIP = "127.0.0.1";
+    iConn.serverPort = 4444;
     memset(&conn.host_info, 0, sizeof conn.host_info);
 }
 
@@ -26,8 +31,57 @@ void CMSClient::setupServerInfo(const char* serverIP, const char* serverPort)
     conn.serverPort = serverPort;
 }
 
+int CMSClient::internalServer() {
+	int portno;
+	char buffer[256];
+	socklen_t clilen;
+	struct sockaddr_in serv_addr, cli_addr;
+	int n;
+
+	/* First call to socket() function */
+	iConn.socketfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (iConn.socketfd < 0) {
+		perror("ERROR opening socket");
+		exit(1);
+	}
+
+	/* Initialize socket structure */
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	portno = 4444;
+
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_port = htons(portno);
+
+	/* Now bind the host address using bind() call.*/
+	if (bind(iConn.socketfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		perror("ERROR on binding");
+		exit(1);
+	}
+
+	/* Now start listening for the clients, here process will
+	 * go in sleep mode and will wait for the incoming connection
+	 */
+
+	listen(iConn.socketfd, 5);
+	clilen = sizeof(cli_addr);
+
+	/* Accept actual connection from the client */
+	iConn.newSockfd = accept(iConn.socketfd, (struct sockaddr *) &cli_addr, &clilen);
+	if (iConn.newSockfd < 0) {
+		perror("ERROR on accept");
+		exit(1);
+	} else {
+		iConn.ready = true;
+	}
+
+	return 0;
+}
+
 int CMSClient::findServer()
 {
+	unsigned int sleepTime = 200000;
     bool seekingServer = true;
     const char* hostname = "localhost";
     const char* portname = "8888";
@@ -98,7 +152,8 @@ int CMSClient::findServer()
 
         }
 
-        sleep(1);
+       // sleep(1);
+        usleep(sleepTime);
     }
 
     close(socketfd);
@@ -181,7 +236,7 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     sprintf((char*)tmp.c_str(), "%d", conn.coreID);
     std::string str = tmp.c_str();
     payload.append(str);
-    payload.append("\" to=\"cms:server\" >");
+    payload.append("\" to=\"cms:server\">");
     payload.append("110");
     payload.append("</header>");
 
@@ -196,10 +251,16 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
     payload.append(ss->systemRamRemaining);
     payload.append("</atom>");
 
-    //CPU Info
-    payload.append("<atom type=\"system\" class=\"cpu\">");
-    payload.append(ss->systemCpuUsage);
-    payload.append("</atom>");
+	//CPU Info
+	payload.append("<atom type=\"system\" class=\"cpu\">");
+	payload.append(ss->systemCpuUsage);
+	payload.append("</atom>");
+
+	//Part Test
+	payload.append("<atom type=\"system\" class=\"part\">");
+	payload.append(ss->particle);
+	payload.append("</atom>");
+
 
 
     payload.append("</transmission>\r\n");
@@ -208,7 +269,7 @@ std::string CMSClient::createTestXMLPayload(systemStats *ss)
 }
 
 
-void CMSClient::updateSystemStats(systemStats *ss)
+void CMSClient::updateSystemStats(systemStats *ss, char* buff)
 {
     //###The full output of a command ran on the system (assign with execAndStore)
     std::string commandRecv;
@@ -219,21 +280,25 @@ void CMSClient::updateSystemStats(systemStats *ss)
     commandRecv = execAndStore("/opt/vc/bin/vcgencmd measure_temp");
     commandFormatted = commandRecv.substr(5,4);
     ss->systemTemp = commandFormatted;
-    std::cout << "SS TEMP VAL: " << ss->systemTemp << std::endl;
+    //std::cout << "SS TEMP VAL: " << ss->systemTemp << std::endl;
 
     //RAM
     commandRecv = execAndStore("cat /proc/meminfo | grep -i memfree | sed 's/:[ \t]*/: /'");
     commandFormatted = commandRecv.substr(9,6);
     ss->systemRamRemaining = commandFormatted;
-    std::cout << "SS RAM VAL: " << commandFormatted << std::endl;
+    //std::cout << "SS RAM VAL: " << commandFormatted << std::endl;
 
     //CPU INFO
     commandRecv = execAndStore("top -bn1 | grep '^%Cpu' | awk '{print $2+$4+$6}'");
     commandFormatted = commandRecv.substr(0, commandRecv.length() - 1);
     ss->systemCpuUsage = commandFormatted;
-    std::cout << "SS CPU USAGE VAL: " << commandFormatted << std::endl;
+    //std::cout << "SS CPU USAGE VAL: " << commandFormatted << std::endl;
 
     //PARTICLE TOTAL
+    std::string part(buff);
+    //ss->particle = part.substr(0, part.length() - 1);
+    ss->particle = part.substr(0, part.find('\n', 0));
+   // std::cout << "PART VAL: " << part << std::endl;
 }
 
 int CMSClient::sendSystemInfo(systemStats *ss)
@@ -243,11 +308,16 @@ int CMSClient::sendSystemInfo(systemStats *ss)
     std::cout << "Sending XML payload: ";
     ssize_t bytes_sent;
     std::string payload = createTestXMLPayload(ss);
-    std::cout << payload << std::endl;
+   // std::cout << payload << std::endl;
     bytes_sent = send(conn.socketfd, payload.c_str(), strlen(payload.c_str()), 0);
     std::cout << " Sent: " << bytes_sent << std::endl;
 
     return 0;
+}
+
+void CMSClient::setNodeID(const int id)
+{
+    conn.coreID = id;
 }
 /*
 sockaddr_in si_client, si_server;
