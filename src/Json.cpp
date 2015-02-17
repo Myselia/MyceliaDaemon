@@ -1,6 +1,6 @@
 #include "../include/Json.h"
 
-using namespace Json;
+using namespace json;
 
 //-------------------JsonElement-------------------
 
@@ -44,12 +44,6 @@ JsonPrimitive::JsonPrimitive(bool value): JsonElement(JsonElementType::JsonPrimi
 	bval=value;
 }
 
-JsonPrimitive::JsonPrimitive(char value): JsonElement(JsonElementType::JsonPrimitive)
-{
-	primitiveType=PrimitiveType::Char;
-	cval=value;
-}
-
 JsonPrimitive::JsonPrimitive(int value): JsonElement(JsonElementType::JsonPrimitive)
 {
 	primitiveType=PrimitiveType::Int;
@@ -60,6 +54,23 @@ JsonPrimitive::JsonPrimitive(string value): JsonElement(JsonElementType::JsonPri
 {
 	primitiveType=PrimitiveType::String;
 	sval=value;
+}
+
+JsonPrimitive::JsonPrimitive(JsonPrimitive& primitive): JsonElement(JsonElementType::JsonPrimitive)
+{
+	primitiveType=primitive.getPrimitiveType();
+
+	if(primitive.isBool())
+		bval=primitive.getAsBool();
+	else if(primitive.isInt())
+		ival=primitive.getAsInt();
+	else
+		sval=primitive.getAsString();
+}
+
+JsonPrimitive::~JsonPrimitive()
+{
+	//Do Nothing
 }
 
 bool JsonPrimitive::getAsBool()
@@ -86,14 +97,6 @@ string JsonPrimitive::getAsString()
 	return sval;
 }
 
-char JsonPrimitive::getAsChar()
-{
-	if(primitiveType!=PrimitiveType::Char)
-		throw IllegalStateException("Value not a character");
-
-	return cval;
-}
-
 bool JsonPrimitive::isBool()
 {
 	return primitiveType==PrimitiveType::Bool;
@@ -107,11 +110,6 @@ bool JsonPrimitive::isInt()
 bool JsonPrimitive::isString()
 {
 	return primitiveType==PrimitiveType::String;
-}
-
-bool JsonPrimitive::isChar()
-{
-	return primitiveType==PrimitiveType::Char;
 }
 
 JsonPrimitive::PrimitiveType JsonPrimitive::getPrimitiveType()
@@ -128,12 +126,17 @@ bool JsonPrimitive::isPrimitiveType(PrimitiveType primitiveType)
 
 JsonArray::JsonArray(): JsonElement(JsonElementType::JsonArray)
 {
-	elements=list();
+	elements=list<JsonElement>();
 }
 
 uint JsonArray::size()
 {
 	return elements.size();
+}
+
+void JsonArray::add(JsonElement& element)
+{
+	elements.push_back(element);
 }
 
 void JsonArray::add(JsonElement element)
@@ -155,12 +158,22 @@ list<JsonElement>::iterator JsonArray::end()
 
 JsonObject::JsonObject(): JsonElement(JsonElementType::JsonObject)
 {
-	map=unordered_map();
+	map=unordered_map<string, JsonElement>();
 }
 
 JsonElement& JsonObject::operator[](string name)
 {
 	return map[name];
+}
+
+unordered_map<string, JsonElement>::iterator JsonObject::begin()
+{
+	return map.begin();
+}
+
+unordered_map<string, JsonElement>::iterator JsonObject::end()
+{
+	return map.end();
 }
 
 //-------------------Json-------------------
@@ -176,9 +189,16 @@ JsonElement Json::parse(string jsonString)
 	return parse(jsonString, position);
 }
 
-string Json::serialize(JsonElement element)
+string Json::serialize(JsonElement& element)
 {
-	//
+	if(element.isJsonNull())
+		return serializeNull((JsonNull&)element);
+	else if(element.isJsonPrimitive())
+		return serializePrimitive((JsonPrimitive&)element);
+	else if(element.isJsonArray())
+			return serializeArray((JsonArray&)element);
+	else
+		return serializeObject((JsonObject&)element);
 }
 
 JsonElement Json::parse(string jsonString, int& position)
@@ -211,7 +231,7 @@ void Json::skipSpaces(string jsonString, int& position)
 char Json::read(string jsonString, int position)
 {
 	if(position>=jsonString.length())
-		throw new JsonParseException("Not enough characters");
+		throw JsonParseException("Not enough characters");
 
 	return jsonString[position];
 }
@@ -245,6 +265,18 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 				str+="\r";
 			else if(ch=='n')
 				str+="\n";
+			else
+			{
+				string message="";
+
+				message+="Unknown escape code '\\";
+				message+=ch;
+				message+="' at position ";
+				message+=(position-1);
+
+				throw JsonParseException(message);
+			}
+
 
 			escapeCode=false;
 		}
@@ -253,7 +285,7 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 			if(ch=='\\')
 				escapeCode=true;
 			else if(ch=='\n')
-				throw new JsonParseException("Illegal newline ('\\n') in string as position "+position);
+				throw JsonParseException("Illegal newline ('\\n') in string as position "+position);
 			else
 				str+=ch;
 		}
@@ -268,7 +300,7 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 JsonObject Json::parseObject(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='{')
-		throw new JsonParseException("Expected object at position "+position);
+		throw JsonParseException("Expected object at position "+position);
 
 	position++;
 
@@ -280,7 +312,7 @@ JsonObject Json::parseObject(string jsonString, int& position)
 
 		//Parse key
 		if(!checkEqual(jsonString, position, "\""))
-			throw new JsonParseException("Expected object key (string starting with '\"') at position "+position);
+			throw JsonParseException("Expected object key (string starting with '\"') at position "+position);
 
 		position++;
 		string key=parseCString(jsonString, position, '"');
@@ -296,20 +328,20 @@ JsonObject Json::parseObject(string jsonString, int& position)
 		skipSpaces(jsonString, position);
 
 		if(checkEqual(jsonString, position, ","))
-			throw new JsonParseException("Expected array element delimiter (',') at position "+position);
+			throw JsonParseException("Expected array element delimiter (',') at position "+position);
 
 		position++;
 	}
 
 	position++;
 
-	return array;
+	return object;
 }
 
 JsonArray Json::parseArray(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='[')
-		throw new JsonParseException("Expected array at position "+position);
+		throw JsonParseException("Expected array at position "+position);
 
 	position++;
 
@@ -324,7 +356,7 @@ JsonArray Json::parseArray(string jsonString, int& position)
 		skipSpaces(jsonString, position);
 
 		if(checkEqual(jsonString, position, ","))
-			throw new JsonParseException("Expected array element delimiter (',') at position "+position);
+			throw JsonParseException("Expected array element delimiter (',') at position "+position);
 
 		position++;
 	}
@@ -343,12 +375,13 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 	if(checkEqual(jsonString, position, "true"))
 	{
 		position+=4;
-		return new JsonPrimitive(true);
+
+		return JsonPrimitive(true);
 	}
 	else if(checkEqual(jsonString, position, "false"))
 	{
 		position+=5;
-		return new JsonPrimitive(false);
+		return JsonPrimitive(false);
 	}
 	else if(read(jsonString, position)=='\'')
 	{
@@ -357,7 +390,7 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 		position++;
 
 		if(value.length()>1)
-			throw new JsonParseException("Character declaration too long at position "+start);
+			throw JsonParseException("Character declaration too long at position "+start);
 
 		return JsonPrimitive(value[0]);
 	}
@@ -374,7 +407,7 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 		char ch=read(jsonString, position);
 
 		if(ch<'0'||ch>'9')
-			throw new JsonParseException("Expected integer at position "+start);
+			throw JsonParseException("Expected integer at position "+start);
 
 		string str="";
 
@@ -392,30 +425,56 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 JsonNull Json::parseNull(string jsonString, int& position)
 {
 	if(!checkEqual(jsonString, position, "null"))
-		throw new JsonParseException("Expected \"null\" at position "+position);
+		throw JsonParseException("Expected \"null\" at position "+position);
 
 	position+=4;
 
-	return new JsonNull();
+	return JsonNull();
 }
 
-string Json::serializeObject(JsonObject object)
+string Json::serializeObject(JsonObject& object)
 {
-	//
+	string str="{";
+	unordered_map<string, JsonElement>::iterator it;
+
+	for(it=object.begin(); it!=object.end(); it++)
+		str+="\""+(*it).first+"\":"+serialize((*it).second)+",";
+
+	str+="}";
+
+	return str;
 }
 
-string Json::serializeArray(JsonArray array)
+string Json::serializeArray(JsonArray& array)
 {
-	//
+	string str="[";
+	list<JsonElement>::iterator it;
+
+	for(it=array.begin(); it!=array.end(); it++)
+		str+=serialize(*it)+",";
+
+	str+="]";
+
+	return str;
 }
 
-string Json::serializePrimitive(JsonPrimitive primitive)
+string Json::serializePrimitive(JsonPrimitive& primitive)
 {
-	//
+	if(primitive.isBool())
+	{
+		if(primitive.getAsBool())
+			return "true";
+		else
+			return "false";
+	}
+	else if(primitive.isInt())
+		return to_string(primitive.getAsInt());
+	else
+		return primitive.getAsString();
 }
 
-string Json::serializeNull(JsonNull null)
+string Json::serializeNull(JsonNull& null)
 {
-	//
+	return "null";
 }
 

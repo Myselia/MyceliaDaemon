@@ -7,19 +7,17 @@
 
 using namespace std;
 
-class GenericException: exception
+class GenericException: public exception
 {
 	public:
 	GenericException()
 	{
 		message="";
-		cause=NULL;
 	}
 
 	GenericException(string message)
 	{
 		this->message=message;
-		cause=NULL;
 	}
 
 	GenericException(exception cause)
@@ -46,7 +44,7 @@ class GenericException: exception
 
 	virtual const char* what() const throw()
 	{
-		return message;
+		return message.c_str();
 	}
 
 	private:
@@ -54,7 +52,7 @@ class GenericException: exception
 	exception cause;
 };
 
-class IllegalStateException: GenericException
+class IllegalStateException: public GenericException
 {
 	public:
 	IllegalStateException()

@@ -8,10 +8,10 @@
 
 using namespace std;
 
-namespace Json
+namespace json
 {
 
-class JsonParseException: GenericException
+class JsonParseException: public GenericException
 {
 	public:
 	JsonParseException()
@@ -47,26 +47,26 @@ class JsonElement
 		JsonElementType type;
 };
 
-class JsonNull: JsonElement
+class JsonNull: public JsonElement
 {
 	public:
 		JsonNull();
 };
 
-class JsonPrimitive: JsonElement
+class JsonPrimitive: public JsonElement
 {
 	public:
-		enum PrimitiveType{Bool, Char, Int, String};
+		enum PrimitiveType{Bool, Int, String};
 
 		JsonPrimitive(bool value);
-		JsonPrimitive(char value);
 		JsonPrimitive(int value);
 		JsonPrimitive(string value);
+		JsonPrimitive(JsonPrimitive& primitive);
+		~JsonPrimitive();
 
 		bool getAsBool();
 		int getAsInt();
 		string getAsString();
-		char getAsChar();
 
 		PrimitiveType getPrimitiveType();
 		bool isPrimitiveType(PrimitiveType primitiveType);
@@ -74,7 +74,6 @@ class JsonPrimitive: JsonElement
 		bool isBool();
 		bool isInt();
 		bool isString();
-		bool isChar();
 
 	private:
 		PrimitiveType primitiveType;
@@ -82,19 +81,19 @@ class JsonPrimitive: JsonElement
 		union
 		{
 			bool bval;
-			char cval;
 			int ival;
 			string sval;
 		};
 };
 
-class JsonArray: JsonElement
+class JsonArray: public JsonElement
 {
 	public:
 		JsonArray();
 
 		uint size();
 		void add(JsonElement element);
+		void add(JsonElement& element);
 
 		list<JsonElement>::iterator begin();
 		list<JsonElement>::iterator end();
@@ -103,12 +102,15 @@ class JsonArray: JsonElement
 		list<JsonElement> elements;
 };
 
-class JsonObject: JsonElement
+class JsonObject: public JsonElement
 {
 	public:
 		JsonObject();
 
 		JsonElement& operator[](string name);
+
+		unordered_map<string, JsonElement>::iterator begin();
+		unordered_map<string, JsonElement>::iterator end();
 
 	private:
 		unordered_map<string, JsonElement>  map;
@@ -123,7 +125,7 @@ class Json
 		Json();
 
 		JsonElement parse(string jsonString);
-		string serialize(JsonElement element);
+		string serialize(JsonElement& element);
 
 	private:
 		JsonElement parse(string jsonString, int& position);
@@ -141,10 +143,10 @@ class Json
 		 */
 		string parseCString(string jsonString, int& position, char stopChar);
 
-		string serializeObject(JsonObject object);
-		string serializeArray(JsonArray array);
-		string serializePrimitive(JsonPrimitive primitive);
-		string serializeNull(JsonNull null);
+		string serializeObject(JsonObject& object);
+		string serializeArray(JsonArray& array);
+		string serializePrimitive(JsonPrimitive& primitive);
+		string serializeNull(JsonNull& null);
 };
 
 }
