@@ -56,7 +56,8 @@ JsonPrimitive::JsonPrimitive(string value): JsonElement(JsonElementType::JsonPri
 	sval=value;
 }
 
-JsonPrimitive::JsonPrimitive(JsonPrimitive& primitive): JsonElement(JsonElementType::JsonPrimitive)
+
+JsonPrimitive::JsonPrimitive(const JsonPrimitive& primitive): JsonElement(JsonElementType::JsonPrimitive)
 {
 	primitiveType=primitive.getPrimitiveType();
 
@@ -73,7 +74,7 @@ JsonPrimitive::~JsonPrimitive()
 	//Do Nothing
 }
 
-bool JsonPrimitive::getAsBool()
+bool JsonPrimitive::getAsBool() const
 {
 	if(primitiveType!=PrimitiveType::Bool)
 		throw IllegalStateException("Value not a boolean");
@@ -81,7 +82,7 @@ bool JsonPrimitive::getAsBool()
 	return bval;
 }
 
-int JsonPrimitive::getAsInt()
+int JsonPrimitive::getAsInt() const
 {
 	if(primitiveType!=PrimitiveType::Int)
 		throw IllegalStateException("Value not an integer");
@@ -89,35 +90,35 @@ int JsonPrimitive::getAsInt()
 	return ival;
 }
 
-string JsonPrimitive::getAsString()
+string JsonPrimitive::getAsString() const
 {
 	if(primitiveType!=PrimitiveType::String)
-		throw IllegalStateException("Value not an string");
+		throw IllegalStateException("Value not a string");
 
 	return sval;
 }
 
-bool JsonPrimitive::isBool()
+bool JsonPrimitive::isBool() const
 {
 	return primitiveType==PrimitiveType::Bool;
 }
 
-bool JsonPrimitive::isInt()
+bool JsonPrimitive::isInt() const
 {
 	return primitiveType==PrimitiveType::Int;
 }
 
-bool JsonPrimitive::isString()
+bool JsonPrimitive::isString() const
 {
 	return primitiveType==PrimitiveType::String;
 }
 
-JsonPrimitive::PrimitiveType JsonPrimitive::getPrimitiveType()
+JsonPrimitive::PrimitiveType JsonPrimitive::getPrimitiveType() const
 {
 	return primitiveType;
 }
 
-bool JsonPrimitive::isPrimitiveType(PrimitiveType primitiveType)
+bool JsonPrimitive::isPrimitiveType(PrimitiveType primitiveType) const
 {
 	return this->primitiveType==primitiveType;
 }
@@ -163,7 +164,7 @@ JsonObject::JsonObject(): JsonElement(JsonElementType::JsonObject)
 
 JsonElement& JsonObject::operator[](string name)
 {
-	return map[name];
+	return (*((map.insert(unordered_map<string, JsonElement>::value_type(name, json::JsonNull()))).first)).second;
 }
 
 unordered_map<string, JsonElement>::iterator JsonObject::begin()
@@ -418,7 +419,7 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 			ch=read(jsonString, position);
 		}
 
-		return JsonPrimitive(atoi((char const*)str));
+		return JsonPrimitive(stoi(str));
 	}
 }
 

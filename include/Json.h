@@ -61,19 +61,19 @@ class JsonPrimitive: public JsonElement
 		JsonPrimitive(bool value);
 		JsonPrimitive(int value);
 		JsonPrimitive(string value);
-		JsonPrimitive(JsonPrimitive& primitive);
+		JsonPrimitive(const JsonPrimitive& primitive);
 		~JsonPrimitive();
 
-		bool getAsBool();
-		int getAsInt();
-		string getAsString();
+		bool getAsBool() const;
+		int getAsInt() const;
+		string getAsString() const;
 
-		PrimitiveType getPrimitiveType();
-		bool isPrimitiveType(PrimitiveType primitiveType);
+		PrimitiveType getPrimitiveType() const;
+		bool isPrimitiveType(PrimitiveType primitiveType) const;
 
-		bool isBool();
-		bool isInt();
-		bool isString();
+		bool isBool() const;
+		bool isInt() const;
+		bool isString() const;
 
 	private:
 		PrimitiveType primitiveType;
