@@ -2,6 +2,9 @@
 #define INCLUDE_JSON_H_
 
 #include <string>
+#include <boost/variant/variant.hpp>
+#include <boost/variant/get.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "Generic.h"
 #include "Exception.h"
@@ -33,12 +36,14 @@ class JsonParseException: public GenericException
 class JsonElement
 {
 	public:
-		enum JsonElementType {JsonNull, JsonPrimitive, JsonArray, JsonObject};
+		enum JsonElementType{JsonNull, JsonPrimitive, JsonArray, JsonObject};
 
 		bool isJsonNull();
 		bool isJsonPrimitive();
 		bool isJsonArray();
 		bool isJsonObject();
+
+		JsonElementType getJsonElementType();
 
 	protected:
 		JsonElement(JsonElementType type);
@@ -61,7 +66,7 @@ class JsonPrimitive: public JsonElement
 		JsonPrimitive(bool value);
 		JsonPrimitive(int value);
 		JsonPrimitive(string value);
-		JsonPrimitive(const JsonPrimitive& primitive);
+		JsonPrimitive(const char* value);
 		~JsonPrimitive();
 
 		bool getAsBool() const;
@@ -76,14 +81,7 @@ class JsonPrimitive: public JsonElement
 		bool isString() const;
 
 	private:
-		PrimitiveType primitiveType;
-
-		union
-		{
-			bool bval;
-			int ival;
-			string sval;
-		};
+		boost::variant<bool, int, string> val;
 };
 
 class JsonArray: public JsonElement
@@ -92,14 +90,13 @@ class JsonArray: public JsonElement
 		JsonArray();
 
 		uint size();
-		void add(JsonElement element);
-		void add(JsonElement& element);
+		void add(const boost::shared_ptr<JsonElement>& element);
 
-		list<JsonElement>::iterator begin();
-		list<JsonElement>::iterator end();
+		list<boost::shared_ptr<JsonElement>>::iterator begin();
+		list<boost::shared_ptr<JsonElement>>::iterator end();
 
 	private:
-		list<JsonElement> elements;
+		list<boost::shared_ptr<JsonElement>> elements;
 };
 
 class JsonObject: public JsonElement
@@ -107,13 +104,13 @@ class JsonObject: public JsonElement
 	public:
 		JsonObject();
 
-		JsonElement& operator[](string name);
+		boost::shared_ptr<JsonElement>& operator[](string name);
 
-		unordered_map<string, JsonElement>::iterator begin();
-		unordered_map<string, JsonElement>::iterator end();
+		unordered_map<string, boost::shared_ptr<JsonElement>>::iterator begin();
+		unordered_map<string, boost::shared_ptr<JsonElement>>::iterator end();
 
 	private:
-		unordered_map<string, JsonElement>  map;
+		unordered_map<string, boost::shared_ptr<JsonElement>>  map;
 };
 
 /**
@@ -124,15 +121,15 @@ class Json
 	public:
 		Json();
 
-		JsonElement parse(string jsonString);
-		string serialize(JsonElement& element);
+		boost::shared_ptr<JsonElement> parse(string jsonString);
+		string serialize(const boost::shared_ptr<JsonElement>& element);
 
 	private:
-		JsonElement parse(string jsonString, int& position);
-		JsonObject parseObject(string jsonString, int& position);
-		JsonArray parseArray(string jsonString, int& position);
-		JsonPrimitive parsePrimitive(string jsonString, int& position);
-		JsonNull parseNull(string jsonString, int& position);
+		boost::shared_ptr<JsonElement> parse(string jsonString, int& position);
+		boost::shared_ptr<JsonObject> parseObject(string jsonString, int& position);
+		boost::shared_ptr<JsonArray> parseArray(string jsonString, int& position);
+		boost::shared_ptr<JsonPrimitive> parsePrimitive(string jsonString, int& position);
+		boost::shared_ptr<JsonNull> parseNull(string jsonString, int& position);
 		void skipSpaces(string jsonString, int& position);
 		char read(string jsonString, int position);
 		bool checkEqual(string jsonString, int position, string needle);
@@ -142,11 +139,12 @@ class Json
 		 * This method keeps reading until it hits stopChar.
 		 */
 		string parseCString(string jsonString, int& position, char stopChar);
+		string escapeQuotes(string str);
 
-		string serializeObject(JsonObject& object);
-		string serializeArray(JsonArray& array);
-		string serializePrimitive(JsonPrimitive& primitive);
-		string serializeNull(JsonNull& null);
+		string serializeObject(const boost::shared_ptr<JsonObject>& object);
+		string serializeArray(const boost::shared_ptr<JsonArray>& array);
+		string serializePrimitive(const boost::shared_ptr<JsonPrimitive>& primitive);
+		string serializeNull(const boost::shared_ptr<JsonNull>& null);
 };
 
 }

@@ -1,6 +1,7 @@
 #include "../include/Json.h"
 
 using namespace json;
+using namespace std;
 
 //-------------------JsonElement-------------------
 
@@ -29,6 +30,11 @@ bool JsonElement::isJsonObject()
 	return type==JsonElementType::JsonObject;
 }
 
+JsonElement::JsonElementType JsonElement::getJsonElementType()
+{
+	return type;
+}
+
 //-------------------JsonNull-------------------
 
 JsonNull::JsonNull(): JsonElement(JsonElementType::JsonNull)
@@ -40,33 +46,22 @@ JsonNull::JsonNull(): JsonElement(JsonElementType::JsonNull)
 
 JsonPrimitive::JsonPrimitive(bool value): JsonElement(JsonElementType::JsonPrimitive)
 {
-	primitiveType=PrimitiveType::Bool;
-	bval=value;
+	val=value;
 }
 
 JsonPrimitive::JsonPrimitive(int value): JsonElement(JsonElementType::JsonPrimitive)
 {
-	primitiveType=PrimitiveType::Int;
-	ival=value;
+	val=value;
 }
 
 JsonPrimitive::JsonPrimitive(string value): JsonElement(JsonElementType::JsonPrimitive)
 {
-	primitiveType=PrimitiveType::String;
-	sval=value;
+	val=value;
 }
 
-
-JsonPrimitive::JsonPrimitive(const JsonPrimitive& primitive): JsonElement(JsonElementType::JsonPrimitive)
+JsonPrimitive::JsonPrimitive(const char* value): JsonElement(JsonElementType::JsonPrimitive)
 {
-	primitiveType=primitive.getPrimitiveType();
-
-	if(primitive.isBool())
-		bval=primitive.getAsBool();
-	else if(primitive.isInt())
-		ival=primitive.getAsInt();
-	else
-		sval=primitive.getAsString();
+	val=(string)value;
 }
 
 JsonPrimitive::~JsonPrimitive()
@@ -76,58 +71,63 @@ JsonPrimitive::~JsonPrimitive()
 
 bool JsonPrimitive::getAsBool() const
 {
-	if(primitiveType!=PrimitiveType::Bool)
+	if(!isBool())
 		throw IllegalStateException("Value not a boolean");
 
-	return bval;
+	return boost::get<bool>(val);
 }
 
 int JsonPrimitive::getAsInt() const
 {
-	if(primitiveType!=PrimitiveType::Int)
+	if(!isInt())
 		throw IllegalStateException("Value not an integer");
 
-	return ival;
+	return boost::get<int>(val);
 }
 
 string JsonPrimitive::getAsString() const
 {
-	if(primitiveType!=PrimitiveType::String)
+	if(!isString())
 		throw IllegalStateException("Value not a string");
 
-	return sval;
+	return boost::get<string>(val);
 }
 
 bool JsonPrimitive::isBool() const
 {
-	return primitiveType==PrimitiveType::Bool;
+	return isPrimitiveType(PrimitiveType::Bool);
 }
 
 bool JsonPrimitive::isInt() const
 {
-	return primitiveType==PrimitiveType::Int;
+	return isPrimitiveType(PrimitiveType::Int);
 }
 
 bool JsonPrimitive::isString() const
 {
-	return primitiveType==PrimitiveType::String;
+	return isPrimitiveType(PrimitiveType::String);
 }
 
 JsonPrimitive::PrimitiveType JsonPrimitive::getPrimitiveType() const
 {
-	return primitiveType;
+	if(val.type()==typeid(bool))
+		return PrimitiveType::Bool;
+	else if(val.type()==typeid(int))
+		return PrimitiveType::Int;
+	else
+		return PrimitiveType::String;
 }
 
 bool JsonPrimitive::isPrimitiveType(PrimitiveType primitiveType) const
 {
-	return this->primitiveType==primitiveType;
+	return getPrimitiveType()==primitiveType;
 }
 
 //-------------------JsonArray-------------------
 
 JsonArray::JsonArray(): JsonElement(JsonElementType::JsonArray)
 {
-	elements=list<JsonElement>();
+	elements=list<boost::shared_ptr<JsonElement>>();
 }
 
 uint JsonArray::size()
@@ -135,22 +135,17 @@ uint JsonArray::size()
 	return elements.size();
 }
 
-void JsonArray::add(JsonElement& element)
+void JsonArray::add(const boost::shared_ptr<JsonElement>& element)
 {
 	elements.push_back(element);
 }
 
-void JsonArray::add(JsonElement element)
-{
-	elements.push_back(element);
-}
-
-list<JsonElement>::iterator JsonArray::begin()
+list<boost::shared_ptr<JsonElement>>::iterator JsonArray::begin()
 {
 	return elements.begin();
 }
 
-list<JsonElement>::iterator JsonArray::end()
+list<boost::shared_ptr<JsonElement>>::iterator JsonArray::end()
 {
 	return elements.end();
 }
@@ -159,20 +154,22 @@ list<JsonElement>::iterator JsonArray::end()
 
 JsonObject::JsonObject(): JsonElement(JsonElementType::JsonObject)
 {
-	map=unordered_map<string, JsonElement>();
+	map=unordered_map<string, boost::shared_ptr<JsonElement>>();
 }
 
-JsonElement& JsonObject::operator[](string name)
+boost::shared_ptr<JsonElement>& JsonObject::operator[](string name)
 {
-	return (*((map.insert(unordered_map<string, JsonElement>::value_type(name, json::JsonNull()))).first)).second;
+	boost::shared_ptr<json::JsonNull> null(new json::JsonNull);
+
+	return (*((map.insert(unordered_map<string, boost::shared_ptr<JsonElement>>::value_type(name, null))).first)).second;
 }
 
-unordered_map<string, JsonElement>::iterator JsonObject::begin()
+unordered_map<string, boost::shared_ptr<JsonElement>>::iterator JsonObject::begin()
 {
 	return map.begin();
 }
 
-unordered_map<string, JsonElement>::iterator JsonObject::end()
+unordered_map<string, boost::shared_ptr<JsonElement>>::iterator JsonObject::end()
 {
 	return map.end();
 }
@@ -183,26 +180,26 @@ Json::Json()
 	//Do nothing
 }
 
-JsonElement Json::parse(string jsonString)
+boost::shared_ptr<JsonElement> Json::parse(string jsonString)
 {
 	int position=0;
 
 	return parse(jsonString, position);
 }
 
-string Json::serialize(JsonElement& element)
+string Json::serialize(const boost::shared_ptr<JsonElement>& element)
 {
-	if(element.isJsonNull())
-		return serializeNull((JsonNull&)element);
-	else if(element.isJsonPrimitive())
-		return serializePrimitive((JsonPrimitive&)element);
-	else if(element.isJsonArray())
-			return serializeArray((JsonArray&)element);
+	if(element->isJsonNull())
+		return serializeNull(boost::static_pointer_cast<JsonNull>(element));
+	else if(element->isJsonPrimitive())
+		return serializePrimitive(boost::static_pointer_cast<JsonPrimitive>(element));
+	else if(element->isJsonArray())
+			return serializeArray(boost::static_pointer_cast<JsonArray>(element));
 	else
-		return serializeObject((JsonObject&)element);
+		return serializeObject(boost::static_pointer_cast<JsonObject>(element));
 }
 
-JsonElement Json::parse(string jsonString, int& position)
+boost::shared_ptr<JsonElement> Json::parse(string jsonString, int& position)
 {
 	skipSpaces(jsonString, position);
 
@@ -298,14 +295,29 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 	return str;
 }
 
-JsonObject Json::parseObject(string jsonString, int& position)
+string Json::escapeQuotes(string str)
+{
+	string ret="";
+
+	for(int i=0; i<str.length(); i++)
+	{
+		if(str[i]=='"')
+			ret+="\\\"";
+		else
+			ret+=str[i];
+	}
+
+	return ret;
+}
+
+boost::shared_ptr<JsonObject> Json::parseObject(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='{')
 		throw JsonParseException("Expected object at position "+position);
 
 	position++;
 
-	JsonObject object=JsonObject();
+	boost::shared_ptr<JsonObject> object(new JsonObject());
 
 	while(read(jsonString, position)!='}')
 	{
@@ -321,10 +333,10 @@ JsonObject Json::parseObject(string jsonString, int& position)
 
 		//Parse value
 		skipSpaces(jsonString, position);
-		JsonElement value=parse(jsonString, position);
+		boost::shared_ptr<JsonElement> value=parse(jsonString, position);
 
 		//Add property to object
-		object[key]=value;
+		(*object)[key]=value;
 
 		skipSpaces(jsonString, position);
 
@@ -339,20 +351,20 @@ JsonObject Json::parseObject(string jsonString, int& position)
 	return object;
 }
 
-JsonArray Json::parseArray(string jsonString, int& position)
+boost::shared_ptr<JsonArray> Json::parseArray(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='[')
 		throw JsonParseException("Expected array at position "+position);
 
 	position++;
 
-	JsonArray array=JsonArray();
+	boost::shared_ptr<JsonArray> array(new JsonArray());
 
 	while(read(jsonString, position)!=']')
 	{
 		skipSpaces(jsonString, position);
 
-		array.add(parse(jsonString, position));
+		array->add(parse(jsonString, position));
 
 		skipSpaces(jsonString, position);
 
@@ -367,7 +379,7 @@ JsonArray Json::parseArray(string jsonString, int& position)
 	return array;
 }
 
-JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
+boost::shared_ptr<JsonPrimitive> Json::parsePrimitive(string jsonString, int& position)
 {
 	//primitives: true, false, 'x', "asd", 4
 
@@ -377,12 +389,17 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 	{
 		position+=4;
 
-		return JsonPrimitive(true);
+		boost::shared_ptr<JsonPrimitive> primitive(new JsonPrimitive(true));
+
+		return primitive;
 	}
 	else if(checkEqual(jsonString, position, "false"))
 	{
 		position+=5;
-		return JsonPrimitive(false);
+
+		boost::shared_ptr<JsonPrimitive> primitive(new JsonPrimitive(false));
+
+		return primitive;
 	}
 	else if(read(jsonString, position)=='\'')
 	{
@@ -393,7 +410,9 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 		if(value.length()>1)
 			throw JsonParseException("Character declaration too long at position "+start);
 
-		return JsonPrimitive(value[0]);
+		boost::shared_ptr<JsonPrimitive> primitive(new JsonPrimitive(value[0]));
+
+		return primitive;
 	}
 	else if(read(jsonString, position)=='"')
 	{
@@ -401,7 +420,9 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 		string value=parseCString(jsonString, position, '"');
 		position++;
 
-		return JsonPrimitive(value);
+		boost::shared_ptr<JsonPrimitive> primitive(new JsonPrimitive(value));
+
+		return primitive;
 	}
 	else
 	{
@@ -419,62 +440,84 @@ JsonPrimitive Json::parsePrimitive(string jsonString, int& position)
 			ch=read(jsonString, position);
 		}
 
-		return JsonPrimitive(stoi(str));
+		boost::shared_ptr<JsonPrimitive> primitive(new JsonPrimitive(stoi(str)));
+
+		return primitive;
 	}
 }
 
-JsonNull Json::parseNull(string jsonString, int& position)
+boost::shared_ptr<JsonNull> Json::parseNull(string jsonString, int& position)
 {
 	if(!checkEqual(jsonString, position, "null"))
 		throw JsonParseException("Expected \"null\" at position "+position);
 
 	position+=4;
 
-	return JsonNull();
+	boost::shared_ptr<JsonNull> null(new JsonNull());
+
+	return null;
 }
 
-string Json::serializeObject(JsonObject& object)
+string Json::serializeObject(const boost::shared_ptr<JsonObject>& object)
 {
 	string str="{";
-	unordered_map<string, JsonElement>::iterator it;
+	unordered_map<string, boost::shared_ptr<JsonElement>>::iterator it;
+	bool first=true;
 
-	for(it=object.begin(); it!=object.end(); it++)
-		str+="\""+(*it).first+"\":"+serialize((*it).second)+",";
+	for(it=object->begin(); it!=object->end(); it++)
+	{
+		if(first)
+			first=false;
+		else
+			str+=',';
+
+		str+="\""+(*it).first+"\":"+serialize((*it).second);
+	}
 
 	str+="}";
 
 	return str;
 }
 
-string Json::serializeArray(JsonArray& array)
+string Json::serializeArray(const boost::shared_ptr<JsonArray>& array)
 {
 	string str="[";
-	list<JsonElement>::iterator it;
+	list<boost::shared_ptr<JsonElement>>::iterator it;
+	bool first=true;
 
-	for(it=array.begin(); it!=array.end(); it++)
-		str+=serialize(*it)+",";
+	for(it=array->begin(); it!=array->end(); it++)
+	{
+		if(first)
+			first=false;
+		else
+			str+=',';
+
+		str+=serialize(*it);
+	}
 
 	str+="]";
 
 	return str;
 }
 
-string Json::serializePrimitive(JsonPrimitive& primitive)
+string Json::serializePrimitive(const boost::shared_ptr<JsonPrimitive>& primitive)
 {
-	if(primitive.isBool())
+	primitive->isBool();
+
+	if(primitive->isBool())
 	{
-		if(primitive.getAsBool())
+		if(primitive->getAsBool())
 			return "true";
 		else
 			return "false";
 	}
-	else if(primitive.isInt())
-		return to_string(primitive.getAsInt());
+	else if(primitive->isInt())
+		return to_string(primitive->getAsInt());
 	else
-		return primitive.getAsString();
+		return "\""+escapeQuotes(primitive->getAsString())+"\"";
 }
 
-string Json::serializeNull(JsonNull& null)
+string Json::serializeNull(const boost::shared_ptr<JsonNull>& null)
 {
 	return "null";
 }
