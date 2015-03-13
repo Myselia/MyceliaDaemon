@@ -4,7 +4,7 @@
 #include "include/Json.h"
 
 using namespace std;
-using namespace json;
+using namespace mycelia;
 
 void printScale(int len);
 char getSecondLastDigit(int num);

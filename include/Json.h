@@ -11,7 +11,7 @@
 
 using namespace std;
 
-namespace json
+namespace mycelia
 {
 
 class JsonParseException: public GenericException

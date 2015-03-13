@@ -1,6 +1,6 @@
 #include "../include/Json.h"
 
-using namespace json;
+using namespace mycelia;
 using namespace std;
 
 //-------------------JsonElement-------------------
@@ -159,7 +159,7 @@ JsonObject::JsonObject(): JsonElement(JsonElementType::JsonObject)
 
 boost::shared_ptr<JsonElement>& JsonObject::operator[](string name)
 {
-	boost::shared_ptr<json::JsonNull> null(new json::JsonNull);
+	boost::shared_ptr<mycelia::JsonNull> null(new mycelia::JsonNull);
 
 	return (*((map.insert(unordered_map<string, boost::shared_ptr<JsonElement>>::value_type(name, null))).first)).second;
 }
