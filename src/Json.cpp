@@ -238,7 +238,7 @@ bool Json::checkEqual(string jsonString, int position, string needle)
 {
 	string str="";
 
-	for(int i=0; i<=needle.length(); i++)
+	for(int i=0; i<needle.length(); i++)
 		str+=read(jsonString, position+i);
 
 	return needle==str;
@@ -270,7 +270,7 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 				message+="Unknown escape code '\\";
 				message+=ch;
 				message+="' at position ";
-				message+=(position-1);
+				message+=to_string(position-1);
 
 				throw JsonParseException(message);
 			}
@@ -283,7 +283,7 @@ string Json::parseCString(string jsonString, int& position, char stopChar)
 			if(ch=='\\')
 				escapeCode=true;
 			else if(ch=='\n')
-				throw JsonParseException("Illegal newline ('\\n') in string as position "+position);
+				throw JsonParseException("Illegal newline ('\\n') in string as position "+to_string(position));
 			else
 				str+=ch;
 		}
@@ -313,37 +313,48 @@ string Json::escapeQuotes(string str)
 boost::shared_ptr<JsonObject> Json::parseObject(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='{')
-		throw JsonParseException("Expected object at position "+position);
+		throw JsonParseException("Expected object at position "+to_string(position));
 
 	position++;
 
 	boost::shared_ptr<JsonObject> object(new JsonObject());
 
-	while(read(jsonString, position)!='}')
+	if(!checkEqual(jsonString, position, "}"))
 	{
-		skipSpaces(jsonString, position);
+		while(true)
+		{
+			skipSpaces(jsonString, position);
 
-		//Parse key
-		if(!checkEqual(jsonString, position, "\""))
-			throw JsonParseException("Expected object key (string starting with '\"') at position "+position);
+			//Parse key
+			if(!checkEqual(jsonString, position, "\""))
+				throw JsonParseException("Expected object key (string starting with '\"') at position "+to_string(position));
 
-		position++;
-		string key=parseCString(jsonString, position, '"');
-		position++;
+			position++;
+			string key=parseCString(jsonString, position, '"');
+			position++;
 
-		//Parse value
-		skipSpaces(jsonString, position);
-		boost::shared_ptr<JsonElement> value=parse(jsonString, position);
+			//Parse value
+			skipSpaces(jsonString, position);
 
-		//Add property to object
-		(*object)[key]=value;
+			if(!checkEqual(jsonString, position, ":"))
+				throw JsonParseException("Expected ':' at position "+to_string(position));
+			position++;
 
-		skipSpaces(jsonString, position);
+			boost::shared_ptr<JsonElement> value=parse(jsonString, position);
 
-		if(checkEqual(jsonString, position, ","))
-			throw JsonParseException("Expected array element delimiter (',') at position "+position);
+			//Add property to object
+			(*object)[key]=value;
 
-		position++;
+			skipSpaces(jsonString, position);
+
+			if(checkEqual(jsonString, position, "}"))
+				break;
+
+			if(read(jsonString, position)!=',')
+				throw JsonParseException("Expected property delimiter (',') at position "+to_string(position));
+
+			position++;
+		}
 	}
 
 	position++;
@@ -354,24 +365,30 @@ boost::shared_ptr<JsonObject> Json::parseObject(string jsonString, int& position
 boost::shared_ptr<JsonArray> Json::parseArray(string jsonString, int& position)
 {
 	if(read(jsonString, position)!='[')
-		throw JsonParseException("Expected array at position "+position);
+		throw JsonParseException("Expected array at position "+to_string(position));
 
 	position++;
 
 	boost::shared_ptr<JsonArray> array(new JsonArray());
 
-	while(read(jsonString, position)!=']')
+	if(!checkEqual(jsonString, position, "]"))
 	{
-		skipSpaces(jsonString, position);
+		while(true)
+		{
+			skipSpaces(jsonString, position);
 
-		array->add(parse(jsonString, position));
+			array->add(parse(jsonString, position));
 
-		skipSpaces(jsonString, position);
+			skipSpaces(jsonString, position);
 
-		if(checkEqual(jsonString, position, ","))
-			throw JsonParseException("Expected array element delimiter (',') at position "+position);
+			if(checkEqual(jsonString, position, "]"))
+				break;
 
-		position++;
+			if(!checkEqual(jsonString, position, ","))
+				throw JsonParseException("Expected array element delimiter (',') at position "+to_string(position));
+
+			position++;
+		}
 	}
 
 	position++;
@@ -429,7 +446,7 @@ boost::shared_ptr<JsonPrimitive> Json::parsePrimitive(string jsonString, int& po
 		char ch=read(jsonString, position);
 
 		if(ch<'0'||ch>'9')
-			throw JsonParseException("Expected integer at position "+start);
+			throw JsonParseException("Expected integer at position "+to_string(start));
 
 		string str="";
 
@@ -449,7 +466,7 @@ boost::shared_ptr<JsonPrimitive> Json::parsePrimitive(string jsonString, int& po
 boost::shared_ptr<JsonNull> Json::parseNull(string jsonString, int& position)
 {
 	if(!checkEqual(jsonString, position, "null"))
-		throw JsonParseException("Expected \"null\" at position "+position);
+		throw JsonParseException("Expected \"null\" at position "+to_string(position));
 
 	position+=4;
 
