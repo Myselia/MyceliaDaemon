@@ -2,9 +2,6 @@
 #ifndef INCLUDE_MYCELIADAEMON_H_
 #define INCLUDE_MYCELIADAEMON_H_
 
-#include <ctime>
-#include <iostream>
-#include <string>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
