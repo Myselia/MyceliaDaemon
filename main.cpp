@@ -1,7 +1,7 @@
 #include "include/MyceliaDaemon.h"
 
 using namespace std;
-using namespace mycelia;
+using namespace com::myselia;
 
 
 int main(int argc, char** argv)

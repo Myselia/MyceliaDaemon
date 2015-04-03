@@ -1,7 +1,7 @@
 #include "../../include/communication/Transmission.h"
 
 using namespace std;
-using namespace mycelia;
+using namespace com::myselia::communication;
 
 Transmission::Transmission()
 {

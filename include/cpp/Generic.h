@@ -9,12 +9,19 @@
 #include <stdlib.h>
 #include <iostream>
 #include <list>
+#include <string>
 #include <unordered_map>
+
+#include <boost/shared_ptr.hpp>
 
 typedef unsigned short ushort;
 typedef unsigned int uint;
 
-namespace mycelia
+namespace com
+{
+namespace myselia
+{
+namespace cpp
 {
 
 class GenericUtil
@@ -23,6 +30,8 @@ class GenericUtil
 	static void printScale(int len);
 };
 
+}
+}
 }
 
 #endif /* INCLUDE_GENERIC_H_ */

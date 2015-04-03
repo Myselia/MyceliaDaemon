@@ -1,11 +1,16 @@
 #ifndef INCLUDE_COMMUNICATION_ATOM_H_
 #define INCLUDE_COMMUNICATION_ATOM_H_
 
-#include "../../Generic.h"
+#include "../cpp/Generic.h"
 
 using namespace std;
+using namespace com::myselia::cpp;
 
-namespace mycelia
+namespace com
+{
+namespace myselia
+{
+namespace communication
 {
 
 class Atom
@@ -24,6 +29,8 @@ class Atom
 	string content;
 };
 
+}
+}
 }
 
 #endif /* INCLUDE_COMMUNICATION_ATOM_H_ */

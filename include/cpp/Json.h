@@ -1,17 +1,19 @@
 #ifndef INCLUDE_JSON_H_
 #define INCLUDE_JSON_H_
 
-#include <string>
 #include <boost/variant/variant.hpp>
 #include <boost/variant/get.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "Generic.h"
 #include "Exception.h"
 
 using namespace std;
 
-namespace mycelia
+namespace com
+{
+namespace myselia
+{
+namespace cpp
 {
 
 class JsonParseException: public GenericException
@@ -155,6 +157,8 @@ class Json
 	string serializeNull(const boost::shared_ptr<JsonNull>& null);
 };
 
+}
+}
 }
 
 #endif /* INCLUDE_JSON_H_ */

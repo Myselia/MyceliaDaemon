@@ -1,7 +1,7 @@
 #include "../../include/communication/Atom.h"
 
 using namespace std;
-using namespace mycelia;
+using namespace com::myselia::communication;
 
 Atom::Atom(string atomType, string atomClass):
 	atomType(atomType), atomClass(atomClass)

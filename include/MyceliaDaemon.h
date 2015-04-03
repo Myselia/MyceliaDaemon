@@ -5,11 +5,13 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include "Json.h"
+#include "cpp/Json.h"
 
 using boost::asio::ip::tcp;
 
-namespace mycelia
+namespace com
+{
+namespace myselia
 {
 
 class MyceliaDaemon
@@ -39,6 +41,7 @@ class MyceliaDaemon
 	void startAccept(boost::asio::ip::tcp::acceptor& acceptor);
 };
 
+}
 }
 
 #endif /* INCLUDE_MYCELIADAEMON_H_ */

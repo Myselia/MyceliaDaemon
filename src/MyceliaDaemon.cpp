@@ -1,7 +1,8 @@
 #include "../include/MyceliaDaemon.h"
 
 using namespace std;
-using namespace mycelia;
+using namespace com::myselia;
+using namespace com::myselia::cpp;
 
 MyceliaDaemon::MyceliaDaemon()
 {

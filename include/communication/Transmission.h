@@ -1,12 +1,17 @@
 #ifndef INCLUDE_COMMUNICATION_STRUCTURES_TRANSMISSION_H_
 #define INCLUDE_COMMUNICATION_STRUCTURES_TRANSMISSION_H_
 
-#include "../../Generic.h"
-#include "../../Atom.h"
+#include "../cpp/Generic.h"
+#include "Atom.h"
 
 using namespace std;
+using namespace com::myselia::cpp;
 
-namespace mycelia
+namespace com
+{
+namespace myselia
+{
+namespace communication
 {
 
 class Transmission
@@ -38,6 +43,8 @@ class Transmission
 	list<boost::shared_ptr<Atom>> atoms;
 };
 
+}
+}
 }
 
 #endif /* INCLUDE_COMMUNICATION_STRUCTURES_TRANSMISSION_H_ */
