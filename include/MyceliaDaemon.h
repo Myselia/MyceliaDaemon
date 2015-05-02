@@ -7,8 +7,6 @@
 
 #include "cpp/Json.h"
 
-using boost::asio::ip::tcp;
-
 namespace com
 {
 namespace myselia
