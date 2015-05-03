@@ -45,17 +45,11 @@ size_t InputStream::read(asio::mutable_buffers_1& buffer)
 	//Start async read
 	inProgress=true;
 
-	cout << "*4-1*" << endl;
-
 	async_read(*(socket->getAsioSocket()), buffer, bind(&InputStream::readDone, this, asio::placeholders::error));
-
-	cout << "*4-2*" << endl;
 
 	//Wait till async read is done.
 	while(inProgress)
 		boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_TIME));
-
-	cout << "*4-3*" << endl;
 
 	//Look for errors while reading
 	if(errorReading)
@@ -63,21 +57,31 @@ size_t InputStream::read(asio::mutable_buffers_1& buffer)
 		if(errorReading==asio::error::eof)
 			return -1;
 		else
-			throw new IOException(errorReading);
+			throw IOException(errorReading);
 	}
-
-	cout << "*4-4*" << endl;
 
 	return asio::buffer_size(buffer);
 }
 
+int InputStream::read()
+{
+	char cbuf[1];
+	asio::mutable_buffers_1 buffer(cbuf, sizeof(cbuf));
+
+	size_t ret=read(buffer);
+
+	if(ret==-1)
+		return -1;
+
+	uchar val=cbuf[0];
+
+	return val;
+}
+
 void InputStream::readDone(const system::error_code& error)
 {
-	cout << "*4-1-1*" << endl;
 	errorReading=error;
 	inProgress=false;
-
-	cout << "*4-1-2*" << endl;
 }
 
 //OutputStream
@@ -98,7 +102,17 @@ void OutputStream::write(asio::mutable_buffers_1& buffer)
 
 	//Look for errors while writing
 	if(errorWriting)
-		throw new IOException(errorWriting);
+		throw IOException(errorWriting);
+}
+
+void OutputStream::write(uchar val)
+{
+	char cbuf[1];
+	cbuf[0]=val;
+
+	asio::mutable_buffers_1 buffer(cbuf, sizeof(cbuf));
+
+	write(buffer);
 }
 
 void OutputStream::writeDone(const system::error_code& error)
@@ -108,7 +122,7 @@ void OutputStream::writeDone(const system::error_code& error)
 }
 
 //Socket
-Socket::Socket(const boost::shared_ptr<asio_socket>& socket): socket(socket)
+Socket::Socket(boost::shared_ptr<asio_socket> socket): socket(socket)
 {
 	connectPending=false;
 }
@@ -126,7 +140,7 @@ Socket::Socket(string host, int port): socket(boost::shared_ptr<asio_socket>(new
 
 	//Look for errors while connecting
 	if(errorConnecting)
-		throw new IOException(errorConnecting);
+		throw IOException(errorConnecting);
 }
 
 void Socket::connectDone(const system::error_code& error)

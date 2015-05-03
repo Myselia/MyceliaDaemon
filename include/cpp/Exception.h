@@ -14,26 +14,26 @@ namespace myselia
 namespace cpp
 {
 
-class GenericException: public exception
+class GenericException: public runtime_error
 {
 	public:
-	GenericException()
+	GenericException(): runtime_error("")
 	{
 		message="";
 	}
 
-	GenericException(string message)
+	GenericException(string message): runtime_error(message)
 	{
 		this->message=message;
 	}
 
-	GenericException(exception cause)
+	GenericException(exception cause): runtime_error("")
 	{
 		message="";
 		this->cause=cause;
 	}
 
-	GenericException(exception cause, string message)
+	GenericException(exception cause, string message): runtime_error(message)
 	{
 		this->message=message;
 		this->cause=cause;
@@ -49,7 +49,7 @@ class GenericException: public exception
 		return cause;
 	}
 
-	virtual const char* what() const throw()
+	const char* what() const throw()
 	{
 		return message.c_str();
 	}

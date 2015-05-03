@@ -14,6 +14,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;
 

@@ -20,7 +20,7 @@ void MyceliaDaemon::start()
 void MyceliaDaemon::start(int port)
 {
 	if(running)
-		throw new IllegalStateException("Daemon already started");
+		throw IllegalStateException("Daemon already started");
 
 	running=true;
 
@@ -30,7 +30,7 @@ void MyceliaDaemon::start(int port)
 void MyceliaDaemon::stop()
 {
 	if(!running)
-		throw new IllegalStateException("Daemon not running");
+		throw IllegalStateException("Daemon not running");
 
 	io_service.stop();
 	serverThread->join();

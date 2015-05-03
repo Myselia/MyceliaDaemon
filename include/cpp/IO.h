@@ -86,12 +86,22 @@ class InputStream
 	InputStream(Socket* socket);
 
 	/**
-	 * Reads from the socket this InputStream is connected to.
-	 * Returns the number of bytes read, -1 if the connection was closed.
+	 * Read from this stream, this will attempt to fill the buffer with data.
+	 * This returns the number of bytes read or -1 if the end of stream is reached (if the connection is closed).
 	 *
 	 * throws IOException
 	 */
 	size_t read(asio::mutable_buffers_1& buffer);
+
+	/**
+	 * Read one byte from this stream.
+	 * This returns the byte read or -1 if the end of stream is reached (if the connection is closed).
+	 *
+	 * The byte read is returned as an unsigned char for compatibility with Java API.
+	 *
+	 * throws IOException
+	 */
+	int read();
 
 	private:
 	/**
@@ -115,11 +125,18 @@ class OutputStream
 	OutputStream(Socket* socket);
 
 	/**
-	 * Writes to the socket this OutputStream is connected to.
+	 * Write then entire buffer to this output stream.
 	 *
 	 * throws IOException
 	 */
 	void write(asio::mutable_buffers_1& buffer);
+
+	/**
+	 * Write one byte to this output stream.
+	 *
+	 * throws IOException
+	 */
+	void write(uchar val);
 
 	private:
 	/**
@@ -136,7 +153,7 @@ class OutputStream
 class Socket
 {
 	public:
-	Socket(const boost::shared_ptr<asio_socket>& socket);
+	Socket(boost::shared_ptr<asio_socket> socket);
 	Socket(const string host, int port);
 
 	boost::shared_ptr<asio_socket> getAsioSocket();
@@ -148,7 +165,7 @@ class Socket
 	 * Time to atomically wait in milliseconds for an asynchronous operations to finish.
 	 */
 	int const WAIT_TIME=30;
-	const boost::shared_ptr<asio_socket>& socket;
+	boost::shared_ptr<asio_socket> socket;
 	bool connectPending;
 	system::error_code errorConnecting;
 

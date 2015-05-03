@@ -7,28 +7,21 @@ using namespace com::myselia::cpp;
 
 int main(int argc, char** argv)
 {
-	char cbuf[5];
-	asio::mutable_buffers_1 buffer(cbuf, sizeof(cbuf));
-
-	cout << "*1*" << endl;
+	char val;
 
 	Socket socket("127.0.0.1", 7000);
 
-	cout << "*2*" << endl;
-
 	boost::shared_ptr<InputStream> is=socket.getInputStream();
-
-	cout << "*3*" << endl;
+	boost::shared_ptr<OutputStream> os=socket.getOutputStream();
 
 	while(true)
 	{
-		cout << "*4*" << endl;
-		is->read(buffer);
-		cout << "*5*" << endl;
+		if((val=is->read())==-1)
+			break;
 
-		cout << (char*)asio::buffer_cast<char*>(buffer);
+		cout << val;
 
-		cout << "*6*" << endl;
+		os->write(val);
 	}
 
 	return 0;

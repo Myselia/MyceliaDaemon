@@ -46,7 +46,7 @@ boost::shared_ptr<Atom> AtomConverter::toAtom(string value)
 string AtomConverter::getAsString(boost::shared_ptr<Atom> atom)
 {
 	if(atom->getAtomClass()!="string")
-		throw new IllegalArgumentException("Atom is not of string type");
+		throw IllegalArgumentException("Atom is not of string type");
 
 	return atom->getContent();
 }
@@ -54,7 +54,7 @@ string AtomConverter::getAsString(boost::shared_ptr<Atom> atom)
 double AtomConverter::getAsDouble(boost::shared_ptr<Atom> atom)
 {
 	if(atom->getAtomClass()!="double")
-		throw new IllegalArgumentException("Atom is not of double type");
+		throw IllegalArgumentException("Atom is not of double type");
 
 	return stod(atom->getContent());
 }
@@ -62,7 +62,7 @@ double AtomConverter::getAsDouble(boost::shared_ptr<Atom> atom)
 int AtomConverter::getAsInt(boost::shared_ptr<Atom> atom)
 {
 	if(atom->getAtomClass()!="integer")
-		throw new IllegalArgumentException("Atom is not of integer type");
+		throw IllegalArgumentException("Atom is not of integer type");
 
 	return stoi(atom->getContent());
 }
@@ -70,7 +70,7 @@ int AtomConverter::getAsInt(boost::shared_ptr<Atom> atom)
 bool AtomConverter::getAsBool(boost::shared_ptr<Atom> atom)
 {
 	if(atom->getAtomClass()!="boolean")
-		throw new IllegalArgumentException("Atom is not of boolean type");
+		throw IllegalArgumentException("Atom is not of boolean type");
 
 	return atom->getContent()=="true";
 }
