@@ -7,7 +7,9 @@
  * This is to allow easier translation of the MyseliaCommon to cpp.
  */
 
+#include <future>
 #include <boost/asio.hpp>
+#include <boost/asio/use_future.hpp>
 #include <boost/thread.hpp>
 
 #include "Json.h"
@@ -78,7 +80,7 @@ class Socket;
 
 /**
  * This class imitates the java class of the same name but uses boost::asio underneath.
- * WARNING: This class is not thread safe.
+ * This class is thread safe.
  */
 class InputStream
 {
@@ -91,7 +93,7 @@ class InputStream
 	 *
 	 * throws IOException
 	 */
-	size_t read(asio::mutable_buffers_1& buffer);
+	int read(asio::mutable_buffers_1& buffer);
 
 	/**
 	 * Read one byte from this stream.
@@ -104,20 +106,12 @@ class InputStream
 	int read();
 
 	private:
-	/**
-	 * Time to atomically wait in milliseconds for an asynchronous operations to finish.
-	 */
-	int const WAIT_TIME=30;
 	Socket* socket;
-	bool inProgress;
-	system::error_code errorReading;
-
-	void readDone(const system::error_code& error);
 };
 
 /**
  * This class imitates the java class of the same name but uses boost::asio underneath.
- * WARNING: This class is not thread safe.
+ * This class is thread safe.
  */
 class OutputStream
 {
@@ -139,17 +133,13 @@ class OutputStream
 	void write(uchar val);
 
 	private:
-	/**
-	 * Time to atomically wait in milliseconds for an asynchronous operations to finish.
-	 */
-	int const WAIT_TIME=30;
 	Socket* socket;
-	bool inProgress;
-	system::error_code errorWriting;
-
-	void writeDone(const system::error_code& error);
 };
 
+/**
+ * This class imitates the java class of the same name but uses boost::asio underneath.
+ * This class is thread safe.
+ */
 class Socket
 {
 	public:

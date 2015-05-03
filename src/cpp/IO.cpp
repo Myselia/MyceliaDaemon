@@ -37,30 +37,25 @@ void IoService::serviceHandlerThread()
 //InputStream
 InputStream::InputStream(Socket* socket): socket(socket)
 {
-	inProgress=false;
+	//Do nothing
 }
 
-size_t InputStream::read(asio::mutable_buffers_1& buffer)
+int InputStream::read(asio::mutable_buffers_1& buffer)
 {
-	//Start async read
-	inProgress=true;
-
-	async_read(*(socket->getAsioSocket()), buffer, bind(&InputStream::readDone, this, asio::placeholders::error));
-
-	//Wait till async read is done.
-	while(inProgress)
-		boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_TIME));
-
-	//Look for errors while reading
-	if(errorReading)
+	try
 	{
-		if(errorReading==asio::error::eof)
+		future<size_t> future=async_read(*(socket->getAsioSocket()), buffer, boost::asio::use_future);
+
+		size_t bytesRead=future.get();
+		return bytesRead;
+	}
+	catch(system::system_error& error)
+	{
+		if(error.code()==asio::error::eof)
 			return -1;
 		else
-			throw IOException(errorReading);
+			throw IOException(error);
 	}
-
-	return asio::buffer_size(buffer);
 }
 
 int InputStream::read()
@@ -68,9 +63,7 @@ int InputStream::read()
 	char cbuf[1];
 	asio::mutable_buffers_1 buffer(cbuf, sizeof(cbuf));
 
-	size_t ret=read(buffer);
-
-	if(ret==-1)
+	if(read(buffer)==-1)
 		return -1;
 
 	uchar val=cbuf[0];
@@ -78,31 +71,25 @@ int InputStream::read()
 	return val;
 }
 
-void InputStream::readDone(const system::error_code& error)
-{
-	errorReading=error;
-	inProgress=false;
-}
-
 //OutputStream
 OutputStream::OutputStream(Socket* socket): socket(socket)
 {
-	inProgress=false;
+	//Do nothing
 }
 
 void OutputStream::write(asio::mutable_buffers_1& buffer)
 {
-	//Start async write
-	inProgress=true;
-	async_write(*socket->getAsioSocket(), buffer, bind(&OutputStream::writeDone, this, asio::placeholders::error));
+	try
+	{
+		future<size_t> future=async_write(*socket->getAsioSocket(), buffer, boost::asio::use_future);
 
-	//Wait till async write is done.
-	while(inProgress)
-		boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_TIME));
-
-	//Look for errors while writing
-	if(errorWriting)
-		throw IOException(errorWriting);
+		//Wait till the operation is done
+		future.get();
+	}
+	catch(system::system_error& error)
+	{
+		throw IOException(error);
+	}
 }
 
 void OutputStream::write(uchar val)
@@ -113,12 +100,6 @@ void OutputStream::write(uchar val)
 	asio::mutable_buffers_1 buffer(cbuf, sizeof(cbuf));
 
 	write(buffer);
-}
-
-void OutputStream::writeDone(const system::error_code& error)
-{
-	errorWriting=error;
-	inProgress=false;
 }
 
 //Socket
