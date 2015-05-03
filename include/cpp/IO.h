@@ -17,6 +17,8 @@
 using namespace boost;
 
 typedef boost::asio::ip::tcp::socket asio_socket;
+typedef boost::asio::ip::tcp::acceptor asio_acceptor;
+typedef boost::asio::ip::tcp::endpoint asio_endpoint;
 
 namespace com
 {
@@ -152,6 +154,21 @@ class Socket
 
 	private:
 	boost::shared_ptr<asio_socket> socket;
+};
+
+/**
+ * This class imitates the java class of the same name but uses boost::asio underneath.
+ * This class is thread safe.
+ */
+class ServerSocket
+{
+	public:
+	ServerSocket(int port);
+
+	boost::shared_ptr<Socket> accept();
+
+	private:
+	boost::shared_ptr<asio_acceptor> acceptor;
 };
 
 }
