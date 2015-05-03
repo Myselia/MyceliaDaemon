@@ -54,7 +54,7 @@ int InputStream::read(asio::mutable_buffers_1& buffer)
 		if(error.code()==asio::error::eof)
 			return -1;
 		else
-			throw IOException(error);
+			throw IOException(error.code());
 	}
 }
 
@@ -88,7 +88,7 @@ void OutputStream::write(asio::mutable_buffers_1& buffer)
 	}
 	catch(system::system_error& error)
 	{
-		throw IOException(error);
+		throw IOException(error.code());
 	}
 }
 
@@ -105,29 +105,23 @@ void OutputStream::write(uchar val)
 //Socket
 Socket::Socket(boost::shared_ptr<asio_socket> socket): socket(socket)
 {
-	connectPending=false;
+	//Do nothing
 }
 
 Socket::Socket(string host, int port): socket(boost::shared_ptr<asio_socket>(new asio_socket(IoService::getInstance().getBoostIoService())))
 {
-	asio::ip::tcp::endpoint ep(asio::ip::address::from_string(host), port);
+	try
+	{
+		asio::ip::tcp::endpoint ep(asio::ip::address::from_string(host), port);
+		future<void> future=socket->async_connect(ep, boost::asio::use_future);
 
-	connectPending=true;
-	socket->async_connect(ep, bind(&Socket::connectDone, this, asio::placeholders::error));
-
-	//Wait till async connect is done.
-	while(connectPending)
-		boost::this_thread::sleep(boost::posix_time::milliseconds(WAIT_TIME));
-
-	//Look for errors while connecting
-	if(errorConnecting)
-		throw IOException(errorConnecting);
-}
-
-void Socket::connectDone(const system::error_code& error)
-{
-	errorConnecting=error;
-	connectPending=false;
+		//Wait till the operation is done
+		future.get();
+	}
+	catch(system::system_error& error)
+	{
+		throw IOException(error.code());
+	}
 }
 
 boost::shared_ptr<asio_socket> Socket::getAsioSocket()

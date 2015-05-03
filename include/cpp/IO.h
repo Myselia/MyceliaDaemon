@@ -151,15 +151,7 @@ class Socket
 	boost::shared_ptr<OutputStream> getOutputStream();
 
 	private:
-	/**
-	 * Time to atomically wait in milliseconds for an asynchronous operations to finish.
-	 */
-	int const WAIT_TIME=30;
 	boost::shared_ptr<asio_socket> socket;
-	bool connectPending;
-	system::error_code errorConnecting;
-
-	void connectDone(const system::error_code& error);
 };
 
 }
