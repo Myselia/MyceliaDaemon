@@ -5,7 +5,7 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 
-#include "cpp/Json.h"
+#include "../../MyseliaCppCommon/include/cpp/Json.h"
 
 namespace com
 {

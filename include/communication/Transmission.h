@@ -1,7 +1,7 @@
 #ifndef INCLUDE_COMMUNICATION_STRUCTURES_TRANSMISSION_H_
 #define INCLUDE_COMMUNICATION_STRUCTURES_TRANSMISSION_H_
 
-#include "../cpp/Generic.h"
+#include "../../../MyseliaCppCommon/include/cpp/Generic.h"
 #include "Atom.h"
 
 using namespace std;

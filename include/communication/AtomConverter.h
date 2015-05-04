@@ -1,8 +1,7 @@
 #ifndef INCLUDE_COMMUNICATION_ATOMCONVERTER_H_
 #define INCLUDE_COMMUNICATION_ATOMCONVERTER_H_
 
-#include "../cpp/Generic.h"
-#include "../cpp/Exception.h"
+#include "../../../MyseliaCppCommon/include/cpp/Exception.h"
 #include "Atom.h"
 
 using namespace std;

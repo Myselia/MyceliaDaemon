@@ -1,18 +1,31 @@
-#include "include/cpp/IO.h"
+#include "../MyseliaCppCommon/include/cpp/IO.h"
 
 using namespace std;
 using namespace boost;
 using namespace com::myselia::cpp;
 
+void connectionHandler(boost::shared_ptr<Socket> socket);
 
 int main(int argc, char** argv)
 {
+	ServerSocket serverSocket(7000);
+	boost::shared_ptr<Socket> socket;
+
+	while(true)
+	{
+		socket=serverSocket.accept();
+
+		boost::thread(boost::bind(&connectionHandler, socket));
+	}
+
+	return 0;
+}
+
+void connectionHandler(boost::shared_ptr<Socket> socket)
+{
 	char val;
-
-	Socket socket("127.0.0.1", 7000);
-
-	boost::shared_ptr<InputStream> is=socket.getInputStream();
-	boost::shared_ptr<OutputStream> os=socket.getOutputStream();
+	boost::shared_ptr<InputStream> is=socket->getInputStream();
+	boost::shared_ptr<OutputStream> os=socket->getOutputStream();
 
 	while(true)
 	{
@@ -23,6 +36,4 @@ int main(int argc, char** argv)
 
 		os->write(val);
 	}
-
-	return 0;
 }

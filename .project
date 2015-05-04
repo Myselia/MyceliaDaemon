@@ -3,6 +3,7 @@
 	<name>MyceliaDaemon</name>
 	<comment></comment>
 	<projects>
+		<project>MyseliaCppCommon</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

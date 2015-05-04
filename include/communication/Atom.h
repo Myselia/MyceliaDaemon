@@ -1,7 +1,7 @@
 #ifndef INCLUDE_COMMUNICATION_ATOM_H_
 #define INCLUDE_COMMUNICATION_ATOM_H_
 
-#include "../cpp/Generic.h"
+#include "../../../MyseliaCppCommon/include/cpp/Generic.h"
 
 using namespace std;
 using namespace com::myselia::cpp;
