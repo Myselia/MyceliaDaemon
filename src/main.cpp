@@ -1,8 +1,8 @@
-#include "../MyseliaCppCommon/include/cpp/IO.h"
+#include <cppcommon/IO.h>
 
 using namespace std;
 using namespace boost;
-using namespace com::myselia::cpp;
+using namespace com::myselia::cppcommon;
 
 void connectionHandler(boost::shared_ptr<Socket> socket);
 
