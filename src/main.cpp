@@ -3,12 +3,41 @@
 using namespace std;
 using namespace boost;
 using namespace com::myselia::daemon;
+using namespace com::myselia::common::communication::units;
+
+void executeDaemon();
+void executeTestClient();
 
 int main(int argc, char** argv)
 {
-	DaemonServer server(7000);
-
-	boost::this_thread::sleep(boost::posix_time::milliseconds(10000));
+	executeDaemon();
 
 	return 0;
+}
+
+void executeDaemon()
+{
+	DaemonServer server(7000);
+
+	boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
+}
+
+void executeTestClient()
+{
+	boost::shared_ptr<Socket> socket(new Socket("127.0.0.1", 7000));
+	BasicTransmissionService bts("clientId");
+	bts.addChannel(socket);
+
+	Destination destination("42", Opcode(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand"));
+
+
+	boost::shared_ptr<Transmission> transmission(new Transmission(222, "clientId", destination.toString()));
+	boost::shared_ptr<Atom> atom(new Atom("", "", "uname -a"));
+	vector<boost::shared_ptr<Atom>> atoms;
+	atoms.push_back(atom);
+	transmission->add_atoms(atoms);
+
+	cout << "Sending command..." << endl;
+	bts.send(destination, transmission);
+	cout << "Sent command." << endl;
 }

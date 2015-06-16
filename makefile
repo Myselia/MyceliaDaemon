@@ -14,7 +14,7 @@ SOURCES = $(shell find $(SRCDIR)/ -name "*.cpp")
 OBJECTS = $(subst $(SRCDIR)/,$(OBJDIR)/,$(SOURCES:.cpp=.o))
 
 # PHONY (non-file targets)
-.PHONY: clean daemon all cppcommon
+.PHONY: clean daemon all cppcommon cleanDep
 
 all: daemon
 
@@ -25,6 +25,9 @@ $(EXECUTABLE): $(OBJECTS) $(CPPCOMMON_LIB)
 
 clean:
 	rm -f -R $(OBJDIR) $(EXECUTABLE)
+
+cleanDep:
+	cd $(CPPCOMMON_PATH) && make clean
 
 $(CPPCOMMON_LIB):
 	cd $(CPPCOMMON_PATH) && make library
