@@ -30,11 +30,15 @@ class DaemonTasks
 		ts->addListener(Opcode(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand"), boost::bind(&DaemonTasks::executeCommand, this, _1));
 	}
 
-	void executeCommand(boost::shared_ptr<Transmission> transmission)
+	void executeCommand(boost::shared_ptr<Transmission> argsTrans)
 	{
-		string command=transmission->get_atoms()[0]->get_value();
+		string command=argsTrans->getAtoms()[0]->get_value();
 
-		cout << "Executing command: " << command << endl;
+		string output=GenericUtil::executeCommand(command);
+
+		boost::shared_ptr<Transmission> retTrans(new Transmission());
+		retTrans->setTo(argsTrans->getFrom());
+		transmission->addStringAtom(output);
 	}
 };
 

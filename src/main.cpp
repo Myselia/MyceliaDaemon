@@ -31,11 +31,8 @@ void executeTestClient()
 	Destination destination("42", Opcode(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand"));
 
 
-	boost::shared_ptr<Transmission> transmission(new Transmission(222, "clientId", destination.toString()));
-	boost::shared_ptr<Atom> atom(new Atom("", "", "uname -a"));
-	vector<boost::shared_ptr<Atom>> atoms;
-	atoms.push_back(atom);
-	transmission->add_atoms(atoms);
+	boost::shared_ptr<Transmission> transmission(new Transmission(destination.toString()));
+	transmission->addStringAtom("uname -a");
 
 	cout << "Sending command..." << endl;
 	bts.send(destination, transmission);
