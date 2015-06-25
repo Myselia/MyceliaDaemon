@@ -14,10 +14,10 @@ namespace myselia
 namespace daemon
 {
 
-class DaemonTasks
+class DaemonOperations
 {
 	public:
-	DaemonTasks(boost::shared_ptr<TransmissionService> ts): ts(ts)
+	DaemonOperations(boost::shared_ptr<TransmissionService> ts): ts(ts)
 	{
 		hookTasks();
 	}
@@ -27,18 +27,25 @@ class DaemonTasks
 
 	void hookTasks()
 	{
-		ts->addListener(Opcode(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand"), boost::bind(&DaemonTasks::executeCommand, this, _1));
+		Opcode opcode1(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand");
+		ts->addListener(opcode1, boost::bind(&DaemonOperations::executeCommand, this, opcode1, _1));
 	}
 
-	void executeCommand(boost::shared_ptr<Transmission> argsTrans)
+	void executeCommand(Opcode opcode, boost::shared_ptr<Transmission> argsTrans)
 	{
 		string command=argsTrans->getAtoms()[0]->get_value();
 
+		cout << "Execute command: " << command << endl;
+
 		string output=GenericUtil::executeCommand(command);
 
-		boost::shared_ptr<Transmission> retTrans(new Transmission());
-		retTrans->setTo(argsTrans->getFrom());
-		transmission->addStringAtom(output);
+		cout << "Output of command: " << output << endl;
+
+		boost::shared_ptr<Transmission> retTrans=boost::shared_ptr<Transmission>(new Transmission(argsTrans->getFrom()));
+		retTrans->setFrom(Destination("", opcode).toString()); //componentId will get replaced by TransmissionService.
+		retTrans->addStringAtom(output);
+
+		ts->send(retTrans);
 	}
 };
 
@@ -49,7 +56,7 @@ class DaemonServer
 	{
 		bts=boost::shared_ptr<BasicTransmissionService>(new BasicTransmissionService(getComponentId()));
 
-		daemonTasks=boost::shared_ptr<DaemonTasks>(new DaemonTasks(bts));
+		daemonTasks=boost::shared_ptr<DaemonOperations>(new DaemonOperations(bts));
 
 		//Start server thread
 		serverThread=boost::thread(bind(&DaemonServer::handleServer, this));
@@ -66,7 +73,7 @@ class DaemonServer
 	uint port;
 	boost::shared_ptr<BasicTransmissionService> bts;
 	boost::thread serverThread;
-	boost::shared_ptr<DaemonTasks> daemonTasks;
+	boost::shared_ptr<DaemonOperations> daemonTasks;
 
 	void handleServer()
 	{
