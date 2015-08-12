@@ -14,7 +14,7 @@ SOURCES = $(shell find $(SRCDIR)/ -name "*.cpp")
 OBJECTS = $(subst $(SRCDIR)/,$(OBJDIR)/,$(SOURCES:.cpp=.o))
 
 # PHONY (non-file targets)
-.PHONY: clean daemon all cppcommon cleanDep
+.PHONY: clean daemon all cppcommon cleanDep install uninstall
 
 all: daemon
 
@@ -36,3 +36,20 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	-mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $< -o $@
 
+install: $(EXECUTABLE) config.json init-script.sh
+	mkdir -p /opt/myseliad
+	cp $(EXECUTABLE) /opt/myseliad/myseliad
+	cp config.json /opt/myseliad/config.json
+	ln -s /var/log/myseliad.log /opt/myseliad/myseliad.log
+	ln -s /var/run/myseliad.pid /opt/myseliad/myseliad.pid
+	chmod 755 /opt/myseliad/myseliad
+	chmod 644 /opt/myseliad/config.json
+	touch /var/log/myseliad.log
+	cp init-script.sh /etc/init.d/myseliad
+	chmod 755 /etc/init.d/myseliad
+	update-rc.d myseliad defaults
+
+uninstall:
+	rm -Rf /opt/myseliad /var/log/myseliad.log /var/run/myseliad.pid
+	update-rc.d -f myseliad remove
+	rm -f /etc/init.d/myseliad
