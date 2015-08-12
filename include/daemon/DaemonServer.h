@@ -17,12 +17,14 @@ namespace daemon
 class DaemonOperations
 {
 	public:
-	DaemonOperations(boost::shared_ptr<TransmissionService> ts): ts(ts)
+	DaemonOperations(boost::shared_ptr<TransmissionService> ts, string username, string password): ts(ts), username(username), password(password)
 	{
 		hookTasks();
 	}
 
 	private:
+	string username;
+    string password;
 	boost::shared_ptr<TransmissionService> ts;
 
 	void hookTasks()
@@ -103,7 +105,15 @@ class DaemonOperations
 
 	void executeCommand(Opcode opcode, boost::shared_ptr<Transmission> argsTrans)
 	{
-		string command=argsTrans->getAtoms()[0]->get_value();
+		string username=argsTrans->getAtoms()[0]->get_value();
+		string password=argsTrans->getAtoms()[1]->get_value();
+		string command=argsTrans->getAtoms()[2]->get_value();
+
+		if(this->username!=username || this->password!=password)
+		{
+			cout << "Warning: wrong username and password, ignoring executeCommand task." << endl;
+			return;
+		}
 
 		cout << "Execute command: " << command << endl;
 
@@ -122,11 +132,11 @@ class DaemonOperations
 class DaemonServer
 {
 	public:
-	DaemonServer(uint port): port(port)
+	DaemonServer(uint port, string username, string password): port(port)
 	{
 		bts=boost::shared_ptr<BasicTransmissionService>(new BasicTransmissionService(getComponentId()));
 
-		daemonTasks=boost::shared_ptr<DaemonOperations>(new DaemonOperations(bts));
+		daemonTasks=boost::shared_ptr<DaemonOperations>(new DaemonOperations(bts, username, password));
 
 		//Start server thread
 		serverThread=boost::thread(bind(&DaemonServer::handleServer, this));
@@ -141,6 +151,8 @@ class DaemonServer
 
 	private:
 	uint port;
+	string username;
+	string password;
 	boost::shared_ptr<BasicTransmissionService> bts;
 	boost::thread serverThread;
 	boost::shared_ptr<DaemonOperations> daemonTasks;

@@ -1,4 +1,5 @@
 #include <daemon/DaemonServer.h>
+#include <daemon/Config.h>
 
 using namespace std;
 using namespace boost;
@@ -6,7 +7,7 @@ using namespace com::myselia::cppcommon;
 using namespace com::myselia::daemon;
 using namespace com::myselia::common::communication::units;
 
-void executeDaemon();
+void executeDaemon(Configuration& config);
 void executeTestClient();
 void clientReceiveResult(boost::shared_ptr<Transmission> transmission, bool& operationDone);
 void sendRequestToDaemon(boost::shared_ptr<TransmissionService> ts,
@@ -17,27 +18,23 @@ void sendFileToDaemon(boost::shared_ptr<TransmissionService> ts,
 		string daemonHost, uint daemonPort, string daemonComponentId,
 		Opcode localOpcode, string filename);
 void clientSendExecuteToDaemon(boost::shared_ptr<TransmissionService> ts,
-		string daemonComponentId, Opcode localOpcode, string command);
+		string daemonComponentId, Opcode localOpcode, string command, string username, string password);
 
 int main(int argc, char** argv)
 {
-	if(argc<2)
-	{
-		cout << "Error: needs exactly 1 argument." << endl;
-		return -1;
-	}
+	Configuration config("config.json");
 
-	if(strcmp(argv[1], "server")==0)
-		executeDaemon();
-	else
+	if(argc==2)
 		executeTestClient();
+	else
+		executeDaemon(config);
 
 	return 0;
 }
 
-void executeDaemon()
+void executeDaemon(Configuration& config)
 {
-	DaemonServer server(7000);
+	DaemonServer server(config.getPort(), config.getUsername(), config.getPassword());
 
 	while(true)
 		boost::this_thread::sleep(boost::posix_time::milliseconds(5000));
@@ -49,6 +46,8 @@ void executeTestClient()
 	string daemonHost="127.0.0.1";
 	uint daemonPort=7000;
 	string daemonComponentId="42";
+	string username="user";
+	string password="pass";
 	//Local info
 	string filename="sandbox.jar";
 	string command="java -jar "+filename;
@@ -72,7 +71,7 @@ void executeTestClient()
 
 	cout << "-------------Executing file-------------" << endl;
 	operationDone=false;
-	clientSendExecuteToDaemon(bts, daemonComponentId, receiveAnswerOpcode, command);
+	clientSendExecuteToDaemon(bts, daemonComponentId, receiveAnswerOpcode, command, username, password);
 
 	while(!operationDone)
 		boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
@@ -164,13 +163,15 @@ void clientReceiveResult(boost::shared_ptr<Transmission> transmission, bool& ope
 }
 
 void clientSendExecuteToDaemon(boost::shared_ptr<TransmissionService> ts,
-		string daemonComponentId, Opcode localOpcode, string command)
+		string daemonComponentId, Opcode localOpcode, string command, string username, string password)
 {
 	Destination to(daemonComponentId, Opcode(ComponentType::DAEMON, ActionType::RUNTIME, "executeCommand"));
 
 	//Send receiveSandbox request.
 	boost::shared_ptr<Transmission> transmission(new Transmission(to));
 	transmission->setFrom(Destination("", localOpcode).toString()); //componentId will get replaced by TransmissionService.
+	transmission->addStringAtom(username);
+	transmission->addStringAtom(password);
 	transmission->addStringAtom(command);
 
 	cout << "Sending request..." << endl;
