@@ -18,6 +18,28 @@ Node Management Service
 ### Command line
 Run `make`
 
+## How to Install / Uninstall
+### How to Install
+After compiling (`make`) run `make install`
+
+### How to Uninstall
+Run `make uninstall`
+
+## How to Use
+Once installed you can use the following commands:
+- # `service myseliad start` to start the Daemon.
+- # `service myseliad stop` to stop the Daemon.
+- # `service myseliad restart` to restart the Daemon.
+- # `service myseliad status` to know if the Daemon is running.
+
+## How to Configure
+Configuration file is located at /opt/myseliad/config.json
+It contains the following options:
+- "username" and "password" are the username and password to provide when sending an execute command to the Daemon.
+- "port" is the port number the Daemon will bind to when started.
+
+Once you change the configuration file you need to restart the Daemon for the new configuration to make effect (Run `service myseliad restart`).
+
 ## How to setup IDE
 1. Follow "Dev Dependencies"
 2. Install Eclipse CDT
